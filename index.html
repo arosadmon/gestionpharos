@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#111111">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GestiónPH">
+<title>GestiónPH — Control de pendientes</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+/* ── Reset & base ── */
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:#f5f5f3;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:14px;color:#111;}
+
+/* ── CSS variables (light) ── */
+:root{
+  --bg:#f5f5f3;
+  --surface:#ffffff;
+  --surface2:#f0efed;
+  --border:#e4e3e0;
+  --border2:#d0cfc9;
+  --text:#111111;
+  --text2:#555550;
+  --text3:#999990;
+  --accent:#185FA5;
+  --accent-bg:#e8f1fb;
+  --accent-text:#0c447c;
+  --success:#1a8a5a;
+  --success-bg:#e8f7ee;
+  --warning:#b06a00;
+  --warning-bg:#fff3e0;
+  --danger:#c0392b;
+  --danger-bg:#fdecea;
+  --info:#1a6fa8;
+  --info-bg:#e8f2fb;
+  --radius:10px;
+  --radius-sm:6px;
+  --shadow:0 1px 4px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.06);
+}
+
+/* ── Layout ── */
+#app{min-height:100vh;display:flex;flex-direction:column;max-width:780px;margin:0 auto;background:var(--surface);box-shadow:var(--shadow);}
+
+/* ── Login ── */
+.login-screen{flex:1;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg);}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px 24px;width:100%;max-width:340px;box-shadow:var(--shadow);}
+.login-brand{display:flex;align-items:center;gap:10px;margin-bottom:22px;}
+.login-brand-icon{width:38px;height:38px;background:#111;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;}
+.login-brand-name{font-size:17px;font-weight:600;letter-spacing:-0.3px;}
+.login-brand-sub{font-size:12px;color:var(--text3);}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:500;}
+.field select,.field input{width:100%;font-size:14px;padding:9px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);transition:border-color .15s;}
+.field select:focus,.field input:focus{outline:none;border-color:var(--accent);}
+.pass-row{display:flex;gap:6px;}
+.pass-row input{flex:1;}
+.btn-eye{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 11px;cursor:pointer;color:var(--text2);font-size:15px;display:flex;align-items:center;}
+.btn-eye:hover{background:var(--border);}
+.btn-login{width:100%;padding:10px;font-size:14px;font-weight:600;border-radius:var(--radius-sm);border:none;background:#111;color:#fff;cursor:pointer;margin-top:6px;letter-spacing:-0.2px;}
+.btn-login:hover{background:#222;}
+.login-hint{font-size:11px;color:var(--text3);margin-top:14px;text-align:center;line-height:1.6;border-top:1px solid var(--border);padding-top:12px;}
+.login-hint strong{color:var(--text2);}
+.login-error{font-size:12px;color:var(--danger);margin-top:8px;text-align:center;display:none;}
+
+/* ── Top bar ── */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;}
+.topbar-brand{display:flex;align-items:center;gap:9px;}
+.topbar-icon{width:30px;height:30px;background:#111;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;}
+.topbar-name{font-size:14px;font-weight:600;letter-spacing:-0.2px;}
+.topbar-sub{font-size:11px;color:var(--text3);}
+.topbar-right{display:flex;align-items:center;gap:6px;}
+.role-pill{font-size:11px;padding:3px 10px;border-radius:999px;font-weight:500;}
+.role-director{background:var(--info-bg);color:var(--info);}
+.role-admin{background:var(--success-bg);color:var(--success);}
+.icon-btn{background:transparent;border:1px solid var(--border);border-radius:var(--radius-sm);padding:5px 9px;cursor:pointer;color:var(--text);font-size:13px;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+.icon-btn:hover{background:var(--surface2);}
+.notif-wrap{position:relative;}
+.nbadge{position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:9px;font-weight:700;border-radius:999px;min-width:15px;height:15px;display:flex;align-items:center;justify-content:center;padding:0 3px;}
+
+/* ── Nav tabs ── */
+.nav-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surface);padding:0 12px;overflow-x:auto;}
+.nav-tab{padding:9px 12px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2);display:flex;align-items:center;gap:5px;white-space:nowrap;margin-bottom:-1px;transition:color .15s;}
+.nav-tab:hover{color:var(--text);}
+.nav-tab.active{color:var(--text);border-bottom-color:#111;font-weight:500;}
+
+/* ── Views ── */
+.view{display:none;}
+.view.active{display:block;}
+
+/* ── Filters bar ── */
+.filters-bar{display:flex;gap:7px;padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center;}
+.filters-bar select,.filters-bar input[type=text]{font-size:13px;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);}
+.filters-bar select:focus,.filters-bar input:focus{outline:none;border-color:var(--accent);}
+.search-wrap{position:relative;display:flex;align-items:center;}
+.search-wrap i{position:absolute;left:8px;color:var(--text3);font-size:14px;pointer-events:none;}
+.search-wrap input{padding-left:28px;width:145px;}
+.btn-primary{display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 14px;border-radius:var(--radius-sm);border:none;background:#111;color:#fff;cursor:pointer;font-weight:500;margin-left:auto;white-space:nowrap;}
+.btn-primary:hover{background:#222;}
+
+/* ── Stats row ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:12px 16px;}
+.stat-card{background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;}
+.stat-label{font-size:11px;color:var(--text2);margin-bottom:3px;}
+.stat-val{font-size:22px;font-weight:600;letter-spacing:-0.5px;}
+.stat-val.red{color:var(--danger);}
+.stat-val.amber{color:var(--warning);}
+.stat-val.green{color:var(--success);}
+.stat-val.blue{color:var(--info);}
+
+/* ── Export buttons ── */
+.export-row{display:flex;gap:7px;padding:0 16px 10px;flex-wrap:wrap;}
+.exp-btn{display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:12px;color:var(--text2);}
+.exp-btn:hover{background:var(--surface);border-color:var(--border2);}
+
+/* ── Task list ── */
+.task-list{padding:0 16px 80px;display:flex;flex-direction:column;gap:7px;}
+.task-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px 14px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;cursor:pointer;transition:border-color .15s,box-shadow .15s;}
+.task-card:hover{border-color:var(--border2);box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+.task-card.vencida{border-left:3px solid var(--danger);border-radius:0 var(--radius) var(--radius) 0;}
+.task-card.proxima{border-left:3px solid var(--warning);border-radius:0 var(--radius) var(--radius) 0;}
+.task-title{font-size:13px;font-weight:500;margin-bottom:5px;letter-spacing:-0.1px;}
+.task-meta{display:flex;flex-wrap:wrap;gap:4px;align-items:center;}
+.tag{font-size:11px;padding:2px 8px;border-radius:999px;}
+.tag-cj{background:var(--info-bg);color:var(--info);}
+.tag-cat{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+.tag-resp{background:var(--surface);color:var(--text2);border:1px solid var(--border);}
+.fecha{font-size:11px;color:var(--text3);margin-top:5px;display:flex;align-items:center;gap:4px;}
+.fecha.red{color:var(--danger);}
+.fecha.amber{color:var(--warning);}
+.epill{font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;cursor:pointer;white-space:nowrap;border:none;transition:opacity .15s;}
+.epill:hover{opacity:0.8;}
+.ep-Pendiente{background:var(--warning-bg);color:var(--warning);}
+.ep-En-proceso{background:var(--info-bg);color:var(--info);}
+.ep-Completada{background:var(--success-bg);color:var(--success);}
+.ep-Vencida{background:var(--danger-bg);color:var(--danger);}
+.empty-state{text-align:center;color:var(--text3);font-size:13px;padding:48px 0;}
+.empty-state i{font-size:32px;display:block;margin-bottom:10px;opacity:.4;}
+
+/* ── Dashboard ── */
+.dash-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 4px;}
+.dash-header span{font-size:13px;color:var(--text2);}
+.dash-header select{font-size:12px;padding:4px 9px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);}
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px;padding:10px 16px 80px;}
+.dash-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;}
+.dash-card-title{font-size:13px;font-weight:600;margin-bottom:2px;display:flex;justify-content:space-between;align-items:center;letter-spacing:-0.2px;}
+.dash-card-sub{font-size:11px;color:var(--text3);margin-bottom:10px;}
+.dash-mini{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px;}
+.mini-s{text-align:center;padding:6px 2px;background:var(--surface2);border-radius:var(--radius-sm);}
+.mini-val{font-size:16px;font-weight:600;}
+.mini-label{font-size:10px;color:var(--text3);}
+.prog-row{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
+.prog-label{font-size:11px;color:var(--text2);width:88px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.prog-bar-bg{flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;}
+.prog-bar{height:100%;border-radius:3px;transition:width .4s;}
+.prog-n{font-size:11px;color:var(--text3);width:14px;text-align:right;}
+
+/* ── Config ── */
+.config-wrap{padding:16px 16px 80px;}
+.cfg-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+.cfg-title{font-size:14px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;letter-spacing:-0.2px;}
+.chip-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.chip{display:flex;align-items:center;gap:5px;font-size:12px;padding:4px 10px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);color:var(--text);}
+.chip-del{background:transparent;border:none;cursor:pointer;color:var(--text3);font-size:12px;padding:0;line-height:1;display:flex;align-items:center;}
+.chip-del:hover{color:var(--danger);}
+.add-row{display:flex;gap:6px;}
+.add-row input{flex:1;font-size:13px;padding:7px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);}
+.add-row input:focus{outline:none;border-color:var(--accent);}
+.btn-add{font-size:13px;padding:7px 13px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;white-space:nowrap;}
+.btn-add:hover{background:var(--border);}
+.user-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:10px;}
+.user-table th{font-size:11px;color:var(--text3);font-weight:500;text-align:left;padding:5px 8px;border-bottom:1px solid var(--border);}
+.user-table td{padding:9px 8px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.user-table tr:last-child td{border-bottom:none;}
+.u-role{font-size:11px;padding:2px 8px;border-radius:999px;font-weight:500;}
+.u-director{background:var(--info-bg);color:var(--info);}
+.u-admin{background:var(--success-bg);color:var(--success);}
+.info-box{background:var(--surface2);border-radius:var(--radius-sm);padding:9px 13px;font-size:12px;color:var(--text2);margin-bottom:12px;display:flex;align-items:flex-start;gap:8px;line-height:1.5;border:1px solid var(--border);}
+
+/* ── Overlays & modals ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:50;align-items:flex-start;justify-content:center;padding:40px 16px 16px;overflow-y:auto;}
+.overlay.open{display:flex;}
+.modal{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:20px;width:100%;max-width:440px;box-shadow:var(--shadow);}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;letter-spacing:-0.2px;}
+.modal-close{background:transparent;border:none;cursor:pointer;font-size:18px;color:var(--text3);padding:0 4px;}
+.modal-close:hover{color:var(--text);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.btn-save{width:100%;padding:10px;font-size:14px;font-weight:600;border-radius:var(--radius-sm);border:none;background:#111;color:#fff;cursor:pointer;margin-top:4px;letter-spacing:-0.2px;}
+.btn-save:hover{background:#222;}
+.btn-danger{width:100%;padding:8px;font-size:13px;border-radius:var(--radius-sm);border:1px solid #fca5a5;background:transparent;color:var(--danger);cursor:pointer;margin-top:6px;}
+.btn-danger:hover{background:var(--danger-bg);}
+
+/* ── Notifications dropdown ── */
+.notif-dd{display:none;position:absolute;top:38px;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);width:290px;z-index:60;padding:12px;box-shadow:var(--shadow);}
+.notif-dd.open{display:block;}
+.notif-hdr{font-size:13px;font-weight:600;margin-bottom:8px;}
+.notif-item{padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2);line-height:1.5;}
+.notif-item:last-child{border-bottom:none;}
+.ndot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:middle;}
+.ndot.red{background:var(--danger);}
+.ndot.amber{background:var(--warning);}
+
+/* ── Responsive ── */
+@media(max-width:480px){
+  .stats-row{grid-template-columns:repeat(2,1fr);}
+  .topbar-right .role-pill{display:none;}
+  .search-wrap input{width:110px;}
+  .field-row{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ═══ LOGIN ═══ -->
+<div id="screen-login" class="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="login-brand-icon"><i class="ti ti-building"></i></div>
+      <div>
+        <div class="login-brand-name">GestiónPH</div>
+        <div class="login-brand-sub">Control de pendientes</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Usuario</label>
+      <select id="loginUser"></select>
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <div class="pass-row">
+        <input type="password" id="loginPass" placeholder="Contraseña" onkeydown="if(event.key==='Enter')doLogin()">
+        <button class="btn-eye" onclick="togglePass()" aria-label="Mostrar contraseña"><i class="ti ti-eye" id="eyeIcon"></i></button>
+      </div>
+    </div>
+    <div class="login-error" id="loginError">Usuario o contraseña incorrectos</div>
+    <button class="btn-login" onclick="doLogin()">Ingresar</button>
+    <div class="login-hint">
+      Cuentas de prueba:<br>
+      Director: <strong>Director Operativo / admin123</strong><br>
+      Administradores: <strong>[nombre] / admin123</strong>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="screen-app" style="display:none;flex-direction:column;min-height:100vh;">
+
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-icon"><i class="ti ti-building"></i></div>
+      <div>
+        <div class="topbar-name">GestiónPH</div>
+        <div class="topbar-sub" id="topbarSub"></div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="role-pill" id="rolePill"></span>
+      <div class="notif-wrap">
+        <button class="icon-btn" onclick="toggleNotif()" aria-label="Alertas">
+          <i class="ti ti-bell"></i>
+          <span class="nbadge" id="nbadge">0</span>
+        </button>
+        <div class="notif-dd" id="notifDD"></div>
+      </div>
+      <button class="icon-btn" onclick="doLogout()"><i class="ti ti-logout"></i><span class="hide-xs">Salir</span></button>
+    </div>
+  </div>
+
+  <div class="nav-tabs" id="navTabs"></div>
+
+  <!-- TAREAS -->
+  <div class="view active" id="view-tareas">
+    <div class="filters-bar">
+      <div class="search-wrap"><i class="ti ti-search"></i><input type="text" id="filtBuscar" placeholder="Buscar..." oninput="renderTasks()"></div>
+      <select id="filtCj" onchange="renderTasks()"></select>
+      <select id="filtCat" onchange="renderTasks()"><option value="">Todas las categorías</option></select>
+      <select id="filtEst" onchange="renderTasks()">
+        <option value="">Todos los estados</option>
+        <option>Pendiente</option><option>En proceso</option><option>Completada</option><option>Vencida</option>
+      </select>
+      <button class="btn-primary" onclick="openTaskModal()"><i class="ti ti-plus"></i> Nueva tarea</button>
+    </div>
+    <div class="stats-row" id="statsRow"></div>
+    <div class="export-row">
+      <button class="exp-btn" onclick="exportCSV()"><i class="ti ti-table"></i> Exportar CSV</button>
+      <button class="exp-btn" onclick="exportPDF()"><i class="ti ti-printer"></i> Imprimir / PDF</button>
+    </div>
+    <div class="task-list" id="taskList"></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="view" id="view-dashboard">
+    <div class="dash-header">
+      <span>Resumen por conjunto</span>
+      <select id="dashFilter" onchange="renderDash()"></select>
+    </div>
+    <div class="dash-grid" id="dashGrid"></div>
+  </div>
+
+  <!-- CONFIGURACIÓN -->
+  <div class="view" id="view-config">
+    <div class="config-wrap">
+      <div class="cfg-card">
+        <div class="cfg-title"><i class="ti ti-building"></i> Conjuntos administrados</div>
+        <div class="chip-list" id="chipConjuntos"></div>
+        <div class="add-row">
+          <input type="text" id="newCj" placeholder="Nombre del conjunto..." onkeydown="if(event.key==='Enter')addConjunto()">
+          <button class="btn-add" onclick="addConjunto()"><i class="ti ti-plus"></i> Agregar</button>
+        </div>
+      </div>
+      <div class="cfg-card">
+        <div class="cfg-title"><i class="ti ti-tag"></i> Categorías de tareas</div>
+        <div class="chip-list" id="chipCategorias"></div>
+        <div class="add-row">
+          <input type="text" id="newCat" placeholder="Nueva categoría..." onkeydown="if(event.key==='Enter')addCategoria()">
+          <button class="btn-add" onclick="addCategoria()"><i class="ti ti-plus"></i> Agregar</button>
+        </div>
+      </div>
+      <div class="cfg-card">
+        <div class="cfg-title"><i class="ti ti-users"></i> Administradores delegados</div>
+        <div class="info-box"><i class="ti ti-info-circle" style="flex-shrink:0;font-size:16px;margin-top:1px;"></i><span>Cada administrador solo verá las tareas de su conjunto asignado. Los datos se guardan en este dispositivo.</span></div>
+        <table class="user-table">
+          <thead><tr><th>Nombre</th><th>Conjunto</th><th>Rol</th><th></th></tr></thead>
+          <tbody id="userTableBody"></tbody>
+        </table>
+        <button class="btn-add" onclick="openUserModal()"><i class="ti ti-plus"></i> Nuevo administrador</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /screen-app -->
+
+<!-- ═══ MODAL: TAREA ═══ -->
+<div class="overlay" id="overlayTask" onclick="closeIfOutside(event,'overlayTask')">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="taskModalTitle">Nueva tarea</span>
+      <button class="modal-close" onclick="closeOverlay('overlayTask')" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="field"><label>Título</label><input type="text" id="fTitulo" placeholder="Ej: Revisión de extintores"></div>
+    <div class="field-row">
+      <div class="field"><label>Conjunto</label><select id="fCj"></select></div>
+      <div class="field"><label>Categoría</label><select id="fCat"></select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Estado</label><select id="fEst"><option>Pendiente</option><option>En proceso</option><option>Completada</option></select></div>
+      <div class="field"><label>Fecha límite</label><input type="date" id="fFecha"></div>
+    </div>
+    <div class="field"><label>Responsable</label><select id="fResp"></select></div>
+    <button class="btn-save" onclick="saveTask()">Guardar tarea</button>
+    <button class="btn-danger" id="btnEliminar" style="display:none" onclick="deleteTask()">Eliminar tarea</button>
+  </div>
+</div>
+
+<!-- ═══ MODAL: USUARIO ═══ -->
+<div class="overlay" id="overlayUser" onclick="closeIfOutside(event,'overlayUser')">
+  <div class="modal">
+    <div class="modal-title">
+      <span>Nuevo administrador delegado</span>
+      <button class="modal-close" onclick="closeOverlay('overlayUser')" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="info-box"><i class="ti ti-key" style="flex-shrink:0;font-size:16px;"></i><span>El administrador podrá ingresar con su nombre y la contraseña que asignes aquí.</span></div>
+    <div class="field"><label>Nombre completo</label><input type="text" id="uNombre" placeholder="Ej: Laura Villada"></div>
+    <div class="field"><label>Conjunto asignado</label><select id="uCj"></select></div>
+    <div class="field"><label>Contraseña</label><input type="password" id="uPass" placeholder="Mínimo 4 caracteres"></div>
+    <button class="btn-save" onclick="saveUser()">Crear administrador</button>
+  </div>
+</div>
+
+<script>
+// ── STORAGE KEYS ──
+const KEY_TASKS   = 'gph_tasks';
+const KEY_USERS   = 'gph_users';
+const KEY_CJ      = 'gph_conjuntos';
+const KEY_CAT     = 'gph_categorias';
+
+function load(key, def){ try{ const v=localStorage.getItem(key); return v?JSON.parse(v):def; }catch(e){ return def; } }
+function save(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
+
+// ── DEFAULT DATA ──
+const DEFAULT_USERS = [
+  {id:1,nombre:'Director Operativo',pass:'admin123',rol:'director',conjunto:null},
+  {id:2,nombre:'Laura Villada',pass:'admin123',rol:'admin',conjunto:'Portal del Valle'},
+  {id:3,nombre:'César Ardila',pass:'admin123',rol:'admin',conjunto:'Portal del Valle'},
+  {id:4,nombre:'Adm. Torres del Parque',pass:'admin123',rol:'admin',conjunto:'Torres del Parque'},
+  {id:5,nombre:'Adm. Los Álamos',pass:'admin123',rol:'admin',conjunto:'Los Álamos'},
+  {id:6,nombre:'Adm. Reserva del Río',pass:'admin123',rol:'admin',conjunto:'Reserva del Río'},
+];
+const DEFAULT_CJ  = ['Portal del Valle','Torres del Parque','Los Álamos','Reserva del Río'];
+const DEFAULT_CAT = ['Financiero','Infraestructura','Seguridad','Administrativo','Jurídico','Mantenimiento','Convivencia'];
+
+// ── STATE ──
+let users      = load(KEY_USERS, DEFAULT_USERS);
+let conjuntos  = load(KEY_CJ,    DEFAULT_CJ);
+let categorias = load(KEY_CAT,   DEFAULT_CAT);
+let tasks      = load(KEY_TASKS, []);
+let nextUserId = Math.max(0,...users.map(u=>u.id))+1;
+let nextTaskId = Math.max(0,...tasks.map(t=>t.id),0)+1;
+let currentUser= null;
+let editingTaskId = null;
+
+// Seed demo tasks if empty
+if(!tasks.length){
+  const today=new Date();
+  function od(d){const x=new Date(today);x.setDate(x.getDate()+d);return x.toISOString().slice(0,10);}
+  tasks=[
+    {id:1,titulo:'Revisión contrato vigilancia',conjunto:'Portal del Valle',categoria:'Seguridad',estado:'Pendiente',fecha:od(-3),responsable:'Laura Villada'},
+    {id:2,titulo:'Envío informe financiero abril',conjunto:'Torres del Parque',categoria:'Financiero',estado:'Pendiente',fecha:od(0),responsable:'Adm. Torres del Parque'},
+    {id:3,titulo:'Cotización planta eléctrica',conjunto:'Los Álamos',categoria:'Infraestructura',estado:'En proceso',fecha:od(2),responsable:'Adm. Los Álamos'},
+    {id:4,titulo:'Radicación licencia de construcción',conjunto:'Portal del Valle',categoria:'Jurídico',estado:'En proceso',fecha:od(10),responsable:'Laura Villada'},
+    {id:5,titulo:'Convocatoria asamblea extraordinaria',conjunto:'Reserva del Río',categoria:'Administrativo',estado:'Pendiente',fecha:od(18),responsable:'Adm. Reserva del Río'},
+    {id:6,titulo:'Pago seguro colectivo',conjunto:'Torres del Parque',categoria:'Financiero',estado:'Completada',fecha:od(-5),responsable:'Adm. Torres del Parque'},
+    {id:7,titulo:'Mantenimiento tanques de agua',conjunto:'Los Álamos',categoria:'Mantenimiento',estado:'Pendiente',fecha:od(5),responsable:'Adm. Los Álamos'},
+    {id:8,titulo:'Actualización reglamento interno',conjunto:'Portal del Valle',categoria:'Administrativo',estado:'Pendiente',fecha:od(7),responsable:'César Ardila'},
+    {id:9,titulo:'Renovación póliza todo riesgo',conjunto:'Reserva del Río',categoria:'Financiero',estado:'Pendiente',fecha:od(3),responsable:'Adm. Reserva del Río'},
+    {id:10,titulo:'Reparación cubierta zona húmeda',conjunto:'Torres del Parque',categoria:'Infraestructura',estado:'En proceso',fecha:od(14),responsable:'Adm. Torres del Parque'},
+  ];
+  nextTaskId=11;
+  save(KEY_TASKS, tasks);
+}
+
+// ── DATE HELPERS ──
+function pad(n){return String(n).padStart(2,'0');}
+function todayStr(){const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
+function daysFrom(s){
+  const t=new Date();t.setHours(0,0,0,0);
+  const d=new Date(s+'T00:00:00');d.setHours(0,0,0,0);
+  return Math.round((d-t)/86400000);
+}
+function fmtDate(s){return new Date(s+'T00:00:00').toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'});}
+
+// ── TASK HELPERS ──
+function isVencida(t){return t.estado!=='Completada'&&daysFrom(t.fecha)<0;}
+function isProxima(t){const d=daysFrom(t.fecha);return t.estado!=='Completada'&&d>=0&&d<=2;}
+function effEstado(t){return(isVencida(t)||t.estado==='Vencida')?'Vencida':t.estado;}
+function cardCls(t){if(isVencida(t)||t.estado==='Vencida')return'vencida';if(isProxima(t))return'proxima';return'';}
+function fechaCls(t){if(isVencida(t)||t.estado==='Vencida')return'red';if(isProxima(t))return'amber';return'';}
+function epCls(e){return'ep-'+e.replace(' ','-');}
+function fechaLabel(t){
+  const d=daysFrom(t.fecha);
+  if(t.estado==='Completada')return fmtDate(t.fecha);
+  if(d<0)return`Venció hace ${Math.abs(d)} día${Math.abs(d)!==1?'s':''}`;
+  if(d===0)return'Vence hoy';if(d===1)return'Vence mañana';
+  if(d<=2)return`Vence en ${d} días`;return fmtDate(t.fecha);
+}
+function visibleTasks(){
+  if(!currentUser)return[];
+  return currentUser.rol==='director'?tasks:tasks.filter(t=>t.conjunto===currentUser.conjunto);
+}
+
+// ── LOGIN ──
+function buildLoginSelect(){
+  const s=document.getElementById('loginUser');
+  s.innerHTML=users.map(u=>`<option value="${u.id}">${u.nombre}${u.rol==='director'?' (Director)':' — '+u.conjunto}</option>`).join('');
+}
+function togglePass(){
+  const i=document.getElementById('loginPass');
+  const ico=document.getElementById('eyeIcon');
+  i.type=i.type==='password'?'text':'password';
+  ico.className=i.type==='password'?'ti ti-eye':'ti ti-eye-off';
+}
+function doLogin(){
+  const uid=parseInt(document.getElementById('loginUser').value);
+  const pass=document.getElementById('loginPass').value;
+  const u=users.find(x=>x.id===uid&&x.pass===pass);
+  if(!u){document.getElementById('loginError').style.display='block';return;}
+  document.getElementById('loginError').style.display='none';
+  document.getElementById('loginPass').value='';
+  currentUser=u;
+  document.getElementById('screen-login').style.display='none';
+  const appEl=document.getElementById('screen-app');
+  appEl.style.display='flex';
+  setupApp();
+}
+function doLogout(){
+  currentUser=null;
+  document.getElementById('screen-app').style.display='none';
+  document.getElementById('screen-login').style.display='flex';
+  buildLoginSelect();
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-tareas').classList.add('active');
+}
+
+// ── APP SETUP ──
+function setupApp(){
+  const dir=currentUser.rol==='director';
+  document.getElementById('topbarSub').textContent=dir?'Director operativo':currentUser.conjunto;
+  const rp=document.getElementById('rolePill');
+  rp.textContent=dir?'Director operativo':'Administrador delegado';
+  rp.className='role-pill '+(dir?'role-director':'role-admin');
+
+  // Nav tabs
+  const tabs=document.getElementById('navTabs');
+  tabs.innerHTML='';
+  const defs=dir
+    ?[{id:'tareas',label:'Tareas',icon:'ti-list-check'},{id:'dashboard',label:'Dashboard',icon:'ti-layout-dashboard'},{id:'config',label:'Configuración',icon:'ti-settings'}]
+    :[{id:'tareas',label:'Mis tareas',icon:'ti-list-check'}];
+  defs.forEach((t,i)=>{
+    const el=document.createElement('div');
+    el.className='nav-tab'+(i===0?' active':'');
+    el.innerHTML=`<i class="ti ${t.icon}"></i> ${t.label}`;
+    el.onclick=()=>switchTab(t.id,el);
+    tabs.appendChild(el);
+  });
+
+  // Filters
+  const filtCj=document.getElementById('filtCj');
+  if(dir){
+    filtCj.innerHTML='<option value="">Todos los conjuntos</option>'+conjuntos.map(c=>`<option>${c}</option>`).join('');
+    filtCj.style.display='';
+  } else {
+    filtCj.innerHTML=`<option value="${currentUser.conjunto}">${currentUser.conjunto}</option>`;
+    filtCj.style.display='none';
+  }
+  document.getElementById('filtCat').innerHTML='<option value="">Todas las categorías</option>'+categorias.map(c=>`<option>${c}</option>`).join('');
+
+  // Dashboard filter
+  const df=document.getElementById('dashFilter');
+  df.innerHTML='<option value="">Todos</option>'+conjuntos.map(c=>`<option>${c}</option>`).join('');
+
+  renderAll();
+}
+
+function switchTab(tab,el){
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('view-'+tab).classList.add('active');
+  if(tab==='dashboard')renderDash();
+  if(tab==='config')renderConfig();
+}
+
+// ── RENDER TASKS ──
+function renderStats(){
+  const vt=visibleTasks();
+  document.getElementById('statsRow').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Total</div><div class="stat-val">${vt.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Vencidas</div><div class="stat-val red">${vt.filter(t=>isVencida(t)||t.estado==='Vencida').length}</div></div>
+    <div class="stat-card"><div class="stat-label">Por vencer</div><div class="stat-val amber">${vt.filter(isProxima).length}</div></div>
+    <div class="stat-card"><div class="stat-label">Completadas</div><div class="stat-val green">${vt.filter(t=>t.estado==='Completada').length}</div></div>`;
+}
+
+function getFiltered(){
+  const cj=document.getElementById('filtCj').value;
+  const cat=document.getElementById('filtCat').value;
+  const est=document.getElementById('filtEst').value;
+  const q=(document.getElementById('filtBuscar').value||'').toLowerCase();
+  return visibleTasks().filter(t=>{
+    const ev=effEstado(t);
+    return(!cj||t.conjunto===cj)&&(!cat||t.categoria===cat)&&(!est||ev===est)&&(!q||t.titulo.toLowerCase().includes(q));
+  }).sort((a,b)=>{
+    const o={Vencida:0,Pendiente:1,'En proceso':2,Completada:3};
+    if(o[effEstado(a)]!==o[effEstado(b)])return o[effEstado(a)]-o[effEstado(b)];
+    return new Date(a.fecha)-new Date(b.fecha);
+  });
+}
+
+function renderTasks(){
+  const list=document.getElementById('taskList');
+  const f=getFiltered();
+  if(!f.length){list.innerHTML='<div class="empty-state"><i class="ti ti-mood-happy"></i>Sin tareas con estos filtros</div>';return;}
+  const dir=currentUser.rol==='director';
+  list.innerHTML=f.map(t=>`
+    <div class="task-card ${cardCls(t)}" onclick="openTaskModal(${t.id})">
+      <div>
+        <div class="task-title">${t.titulo}</div>
+        <div class="task-meta">
+          ${dir?`<span class="tag tag-cj"><i class="ti ti-building" style="font-size:10px;"></i> ${t.conjunto}</span>`:''}
+          <span class="tag tag-cat">${t.categoria}</span>
+          <span class="tag tag-resp"><i class="ti ti-user" style="font-size:10px;"></i> ${t.responsable}</span>
+        </div>
+        <div class="fecha ${fechaCls(t)}"><i class="ti ti-calendar" style="font-size:11px;"></i> ${fechaLabel(t)}</div>
+      </div>
+      <div><button class="epill ${epCls(effEstado(t))}" onclick="cycleEstado(event,${t.id})">${effEstado(t)}</button></div>
+    </div>`).join('');
+}
+
+function cycleEstado(e,id){
+  e.stopPropagation();
+  const orden=['Pendiente','En proceso','Completada'];
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  const cur=orden.includes(t.estado)?t.estado:'Pendiente';
+  t.estado=orden[(orden.indexOf(cur)+1)%orden.length];
+  save(KEY_TASKS,tasks);
+  renderAll();
+}
+
+// ── TASK MODAL ──
+function openTaskModal(id){
+  editingTaskId=id||null;
+  const dir=currentUser.rol==='director';
+  const fCj=document.getElementById('fCj');
+  if(dir){fCj.innerHTML=conjuntos.map(c=>`<option>${c}</option>`).join('');fCj.disabled=false;}
+  else{fCj.innerHTML=`<option>${currentUser.conjunto}</option>`;fCj.disabled=true;}
+  document.getElementById('fCat').innerHTML=categorias.map(c=>`<option>${c}</option>`).join('');
+  const respList=dir?users.filter(u=>u.rol==='admin'):users.filter(u=>u.rol==='admin'&&u.conjunto===currentUser.conjunto);
+  document.getElementById('fResp').innerHTML=respList.map(u=>`<option>${u.nombre}</option>`).join('');
+  if(id){
+    const t=tasks.find(x=>x.id===id);
+    document.getElementById('taskModalTitle').textContent='Editar tarea';
+    document.getElementById('fTitulo').value=t.titulo;
+    fCj.value=t.conjunto;
+    document.getElementById('fCat').value=t.categoria;
+    document.getElementById('fEst').value=t.estado==='Vencida'?'Pendiente':t.estado;
+    document.getElementById('fFecha').value=t.fecha;
+    document.getElementById('fResp').value=t.responsable;
+    document.getElementById('btnEliminar').style.display=dir?'block':'none';
+  } else {
+    document.getElementById('taskModalTitle').textContent='Nueva tarea';
+    document.getElementById('fTitulo').value='';
+    document.getElementById('fFecha').value=todayStr();
+    document.getElementById('fEst').value='Pendiente';
+    document.getElementById('btnEliminar').style.display='none';
+  }
+  document.getElementById('overlayTask').classList.add('open');
+}
+
+function saveTask(){
+  const titulo=document.getElementById('fTitulo').value.trim();
+  if(!titulo){document.getElementById('fTitulo').focus();return;}
+  const data={titulo,conjunto:document.getElementById('fCj').value,categoria:document.getElementById('fCat').value,estado:document.getElementById('fEst').value,fecha:document.getElementById('fFecha').value,responsable:document.getElementById('fResp').value};
+  if(editingTaskId){const i=tasks.findIndex(x=>x.id===editingTaskId);tasks[i]={...tasks[i],...data};}
+  else{tasks.push({id:nextTaskId++,...data});}
+  save(KEY_TASKS,tasks);
+  closeOverlay('overlayTask');
+  renderAll();
+}
+
+function deleteTask(){
+  if(!editingTaskId)return;
+  if(!confirm('¿Eliminar esta tarea?'))return;
+  tasks=tasks.filter(t=>t.id!==editingTaskId);
+  save(KEY_TASKS,tasks);
+  closeOverlay('overlayTask');
+  renderAll();
+}
+
+// ── DASHBOARD ──
+function renderDash(){
+  const fCj=document.getElementById('dashFilter').value;
+  const cjs=fCj?[fCj]:conjuntos;
+  const colors=['#185FA5','#1D9E75','#BA7517','#993556','#534AB7','#993C1D','#3B6D11'];
+  document.getElementById('dashGrid').innerHTML=cjs.map(cj=>{
+    const ct=tasks.filter(t=>t.conjunto===cj);
+    const venc=ct.filter(t=>isVencida(t)||t.estado==='Vencida').length;
+    const pend=ct.filter(t=>t.estado==='Pendiente'&&!isVencida(t)).length;
+    const proc=ct.filter(t=>t.estado==='En proceso').length;
+    const comp=ct.filter(t=>t.estado==='Completada').length;
+    const resps=users.filter(u=>u.rol==='admin'&&u.conjunto===cj).map(u=>u.nombre).join(', ')||'Sin asignar';
+    const catB=categorias.map(c=>({cat:c,n:ct.filter(t=>t.categoria===c).length})).filter(x=>x.n>0);
+    const maxC=Math.max(...catB.map(x=>x.n),1);
+    return`<div class="dash-card">
+      <div class="dash-card-title">${cj}<span style="font-size:11px;color:var(--text3);">${ct.length} tareas</span></div>
+      <div class="dash-card-sub"><i class="ti ti-user" style="font-size:10px;"></i> ${resps}</div>
+      <div class="dash-mini">
+        <div class="mini-s"><div class="mini-val red">${venc}</div><div class="mini-label">Vencidas</div></div>
+        <div class="mini-s"><div class="mini-val amber">${pend}</div><div class="mini-label">Pendientes</div></div>
+        <div class="mini-s"><div class="mini-val blue">${proc}</div><div class="mini-label">En proceso</div></div>
+        <div class="mini-s"><div class="mini-val green">${comp}</div><div class="mini-label">Completadas</div></div>
+      </div>
+      ${catB.map((x,i)=>`<div class="prog-row"><span class="prog-label">${x.cat}</span><div class="prog-bar-bg"><div class="prog-bar" style="width:${Math.round(x.n/maxC*100)}%;background:${colors[i%colors.length]};"></div></div><span class="prog-n">${x.n}</span></div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+// ── CONFIG ──
+function renderConfig(){
+  document.getElementById('chipConjuntos').innerHTML=conjuntos.map((c,i)=>`<div class="chip">${c}<button class="chip-del" onclick="delConjunto(${i})" aria-label="Eliminar">✕</button></div>`).join('');
+  document.getElementById('chipCategorias').innerHTML=categorias.map((c,i)=>`<div class="chip">${c}<button class="chip-del" onclick="delCategoria(${i})" aria-label="Eliminar">✕</button></div>`).join('');
+  document.getElementById('userTableBody').innerHTML=users.map((u,i)=>`
+    <tr>
+      <td>${u.nombre}</td>
+      <td style="color:var(--text3);font-size:12px;">${u.conjunto||'—'}</td>
+      <td><span class="u-role ${u.rol==='director'?'u-director':'u-admin'}">${u.rol==='director'?'Director':'Administrador'}</span></td>
+      <td>${u.rol!=='director'?`<button class="chip-del" onclick="delUser(${i})" aria-label="Eliminar">✕</button>`:''}</td>
+    </tr>`).join('');
+}
+
+function addConjunto(){
+  const v=document.getElementById('newCj').value.trim();
+  if(!v||conjuntos.includes(v))return;
+  conjuntos.push(v);document.getElementById('newCj').value='';
+  save(KEY_CJ,conjuntos);renderConfig();
+}
+function delConjunto(i){
+  if(!confirm(`¿Eliminar "${conjuntos[i]}"?`))return;
+  conjuntos.splice(i,1);save(KEY_CJ,conjuntos);renderConfig();
+}
+function addCategoria(){
+  const v=document.getElementById('newCat').value.trim();
+  if(!v||categorias.includes(v))return;
+  categorias.push(v);document.getElementById('newCat').value='';
+  save(KEY_CAT,categorias);renderConfig();
+}
+function delCategoria(i){
+  if(!confirm(`¿Eliminar "${categorias[i]}"?`))return;
+  categorias.splice(i,1);save(KEY_CAT,categorias);renderConfig();
+}
+function delUser(i){
+  if(users[i].rol==='director')return;
+  if(!confirm(`¿Eliminar administrador "${users[i].nombre}"?`))return;
+  users.splice(i,1);save(KEY_USERS,users);renderConfig();buildLoginSelect();
+}
+
+// ── USER MODAL ──
+function openUserModal(){
+  document.getElementById('uNombre').value='';
+  document.getElementById('uPass').value='';
+  document.getElementById('uCj').innerHTML=conjuntos.map(c=>`<option>${c}</option>`).join('');
+  document.getElementById('overlayUser').classList.add('open');
+}
+function saveUser(){
+  const n=document.getElementById('uNombre').value.trim();
+  const p=document.getElementById('uPass').value.trim();
+  const c=document.getElementById('uCj').value;
+  if(!n||p.length<4){alert('Completa nombre y contraseña (mínimo 4 caracteres)');return;}
+  users.push({id:nextUserId++,nombre:n,pass:p,rol:'admin',conjunto:c});
+  save(KEY_USERS,users);
+  closeOverlay('overlayUser');
+  renderConfig();buildLoginSelect();
+}
+
+// ── NOTIFICATIONS ──
+function renderNotif(){
+  const vt=visibleTasks();
+  const venc=vt.filter(t=>isVencida(t)||t.estado==='Vencida');
+  const hoy=vt.filter(t=>daysFrom(t.fecha)===0&&t.estado!=='Completada');
+  const prox=vt.filter(t=>daysFrom(t.fecha)>0&&daysFrom(t.fecha)<=2&&t.estado!=='Completada');
+  const total=venc.length+hoy.length+prox.length;
+  document.getElementById('nbadge').textContent=total;
+  const dir=currentUser.rol==='director';
+  let html='';
+  venc.forEach(t=>{html+=`<div class="notif-item"><span class="ndot red"></span><strong style="color:var(--danger)">Vencida:</strong> ${t.titulo}${dir?' — '+t.conjunto:''}</div>`;});
+  hoy.forEach(t=>{html+=`<div class="notif-item"><span class="ndot amber"></span><strong style="color:var(--warning)">Vence hoy:</strong> ${t.titulo}</div>`;});
+  prox.forEach(t=>{html+=`<div class="notif-item"><span class="ndot amber"></span><strong style="color:var(--warning)">Vence en ${daysFrom(t.fecha)} día(s):</strong> ${t.titulo}</div>`;});
+  if(!html)html='<div class="notif-item" style="color:var(--success);">✓ Sin alertas activas</div>';
+  document.getElementById('notifDD').innerHTML=`<div class="notif-hdr">Alertas activas</div>${html}`;
+}
+function toggleNotif(){document.getElementById('notifDD').classList.toggle('open');}
+document.addEventListener('click',function(e){
+  const dd=document.getElementById('notifDD');
+  if(dd&&dd.classList.contains('open')&&!dd.contains(e.target)&&!e.target.closest('.notif-wrap'))dd.classList.remove('open');
+});
+
+// ── EXPORT ──
+function exportCSV(){
+  const f=getFiltered();
+  const header=['Título','Conjunto','Categoría','Estado','Fecha límite','Responsable'];
+  const rows=f.map(t=>[t.titulo,t.conjunto,t.categoria,effEstado(t),fmtDate(t.fecha),t.responsable]);
+  const csv=[header,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download=`gestionph_${todayStr()}.csv`;a.click();
+}
+function exportPDF(){
+  const f=getFiltered();
+  const rows=f.map(t=>`<tr><td>${t.titulo}</td><td>${t.conjunto}</td><td>${t.categoria}</td><td>${effEstado(t)}</td><td>${fmtDate(t.fecha)}</td><td>${t.responsable}</td></tr>`).join('');
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe GestiónPH</title><style>body{font-family:Arial,sans-serif;font-size:12px;padding:24px;color:#111;}h1{font-size:16px;margin-bottom:4px;}p{color:#666;font-size:11px;margin-bottom:18px;}table{width:100%;border-collapse:collapse;}th{background:#f0f0f0;padding:7px 9px;text-align:left;font-size:11px;border:1px solid #ddd;}td{padding:6px 9px;border:1px solid #eee;}tr:nth-child(even){background:#fafafa;}</style></head><body><h1>Informe de pendientes — GestiónPH</h1><p>Generado el ${new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'})} · ${f.length} tareas · ${currentUser.nombre}</p><table><thead><tr><th>Título</th><th>Conjunto</th><th>Categoría</th><th>Estado</th><th>Fecha límite</th><th>Responsable</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+  const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),400);}
+}
+
+// ── OVERLAYS ──
+function closeOverlay(id){document.getElementById(id).classList.remove('open');}
+function closeIfOutside(e,id){if(e.target===document.getElementById(id))closeOverlay(id);}
+
+// ── RENDER ALL ──
+function renderAll(){renderStats();renderTasks();renderNotif();}
+
+// ── INIT ──
+buildLoginSelect();
+</script>
+</body>
+</html>
