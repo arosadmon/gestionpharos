@@ -442,8 +442,8 @@ function adminsForCj(cj){
 function buildLoginSelect(){
   const s=document.getElementById('loginUser');
   s.innerHTML=users.map(u=>{
-    const label=u.rol==='director'?'Director Operativo':u.nombre+(u.conjuntos.length?` — ${u.conjuntos.join(', ')}':'');
-    return`<option value="${u.id}">${label}</option>`;
+    const label=u.rol==='director'?'Director Operativo':u.nombre+(u.conjuntos.length?' — '+u.conjuntos.join(', '):'');
+    return '<option value="'+u.id+'">'+ label +'</option>';
   }).join('');
 }
 function togglePass(){
@@ -491,7 +491,7 @@ function setupApp(){
   defs.forEach((t,i)=>{
     const el=document.createElement('div');
     el.className='nav-tab'+(i===0?' active':'');
-    el.innerHTML=`<i class="ti ${t.icon}"></i> ${t.label}`;
+    el.innerHTML='<i class="ti '+t.icon+'">'+'</i> '+t.label;
     el.onclick=()=>switchTab(t.id,el);
     tabs.appendChild(el);
   });
@@ -644,13 +644,23 @@ function deleteTask(){
 // ─── USER MODAL ─────────────────────────────────────────────────────────────
 function buildCjCheckList(selectedCjs){
   const container=document.getElementById('uCjList');
-  container.innerHTML=conjuntos.map(c=>{
+  container.innerHTML='';
+  conjuntos.forEach(function(c){
     const checked=selectedCjs&&selectedCjs.includes(c);
-    return`<label class="cj-check-item${checked?' selected':''}">
-      <input type="checkbox" value="${c}" ${checked?'checked':''} onchange="this.closest('.cj-check-item').classList.toggle('selected',this.checked)">
-      <span class="cj-check-label">${c}</span>
-    </label>`;
-  }).join('');
+    const label=document.createElement('label');
+    label.className='cj-check-item'+(checked?' selected':'');
+    const cb=document.createElement('input');
+    cb.type='checkbox';
+    cb.value=c;
+    cb.checked=!!checked;
+    cb.onchange=function(){this.closest('.cj-check-item').classList.toggle('selected',this.checked);};
+    const span=document.createElement('span');
+    span.className='cj-check-label';
+    span.textContent=c;
+    label.appendChild(cb);
+    label.appendChild(span);
+    container.appendChild(label);
+  });
 }
 
 function getSelectedCjs(){
