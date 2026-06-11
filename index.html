@@ -265,11 +265,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
     <div class="config-wrap">
       <div class="cfg-card">
         <div class="cfg-title"><i class="ti ti-building"></i> Conjuntos administrados</div>
-        <div class="chip-list" id="chipConjuntos"></div>
-        <div class="add-row">
+        <div id="chipConjuntos"></div>
+        <div class="add-row" style="margin-top:10px;">
           <input type="text" id="newCj" placeholder="Nombre del conjunto..." onkeydown="if(event.key==='Enter')addConjunto()">
           <button class="btn-add" onclick="addConjunto()"><i class="ti ti-plus"></i> Agregar</button>
         </div>
+        <button class="btn-add" style="margin-top:8px;width:100%;justify-content:center;background:var(--surface);border-color:var(--info);color:var(--info);" onclick="guardarCorreosConjuntos()"><i class="ti ti-device-floppy"></i> Guardar correos</button>
       </div>
       <div class="cfg-card">
         <div class="cfg-title"><i class="ti ti-tag"></i> Categorías de tareas</div>
@@ -890,11 +891,32 @@ window.delCategoria=async function(i){
   await saveConfig();
   renderConfig();
 };
-window.updateCjEmail=async function(i, email){
+window.updateCjEmail=function(i, email){
   const nombre = conjuntos[i];
   if(!nombre) return;
   conjuntosEmails[nombre] = email;
+  // Don't save on each keystroke - use the save button
+};
+
+window.guardarCorreosConjuntos=async function(){
+  // Read all email inputs and save
+  const inputs = document.querySelectorAll('#chipConjuntos input[type=email]');
+  inputs.forEach(inp=>{
+    const i = parseInt(inp.getAttribute('data-cj'));
+    const nombre = conjuntos[i];
+    if(nombre !== undefined) conjuntosEmails[nombre] = inp.value.trim();
+  });
   await saveConfig();
+  // Show feedback
+  const btn = document.querySelector('[onclick="guardarCorreosConjuntos()"]');
+  if(btn){
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="ti ti-check"></i> Correos guardados';
+    btn.style.background = 'var(--success-bg)';
+    btn.style.borderColor = 'var(--success)';
+    btn.style.color = 'var(--success)';
+    setTimeout(()=>{btn.innerHTML=orig;btn.style.background='';btn.style.borderColor='var(--info)';btn.style.color='var(--info)';}, 2000);
+  }
 };
 
 
