@@ -625,7 +625,7 @@ function getFiltered(){
   });
 }
 
-function renderTasks(){
+window.renderTasks=function renderTasks(){
   const list=document.getElementById('taskList');
   const f=getFiltered();
   if(!f.length){list.innerHTML='<div class="empty-state"><i class="ti ti-mood-happy"></i>Sin tareas con estos filtros</div>';return;}
@@ -812,7 +812,7 @@ window.confirmDelUser=async function(id){
 };
 
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
-function renderDash(){
+window.renderDash=function renderDash(){
   const fCj=document.getElementById('dashFilter').value;
   const cjs=fCj?[fCj]:conjuntos;
   const colors=['#185FA5','#1D9E75','#BA7517','#993556','#534AB7','#993C1D','#3B6D11'];
@@ -969,6 +969,7 @@ window.closeOverlay=function(id){document.getElementById(id).classList.remove('o
 window.closeIfOutside=function(e,id){if(e.target===document.getElementById(id))closeOverlay(id);};
 
 // ── RENDER ALL ───────────────────────────────────────────────────────────────
+window.renderAll=function(){renderStats();renderTasks();renderNotif();};
 function renderAll(){renderStats();renderTasks();renderNotif();}
 
 // ── START ────────────────────────────────────────────────────────────────────
