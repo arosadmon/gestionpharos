@@ -363,6 +363,7 @@ const COL = {
 let tasks      = [];
 let users      = [];
 let conjuntos  = ['Portal del Valle','Torres del Parque','Los Alamos','Reserva del Rio'];
+let conjuntosEmails = {}; // {nombreConjunto: email}
 let categorias = ['Financiero','Infraestructura','Seguridad','Administrativo','Juridico','Mantenimiento','Convivencia'];
 let currentUser   = null;
 let editingTaskId = null;
@@ -418,7 +419,7 @@ async function loadConfig(){
 
 async function saveConfig(){
   try{
-    await setDoc(doc(db, COL.config, 'settings'), {conjuntos, categorias});
+    await setDoc(doc(db, COL.config, 'settings'), {conjuntos, categorias, conjuntosEmails});
   }catch(e){console.warn('Config save error',e);}
 }
 
@@ -454,7 +455,7 @@ async function seedUsers(){
 
 async function saveUserDoc(u){
   const id = u.id || u.nombre.toLowerCase().replace(/[^a-z0-9]/g,'_')+'_'+Date.now();
-  const data = {nombre:u.nombre, pass:u.pass, rol:u.rol, conjuntos:u.conjuntos};
+  const data = {nombre:u.nombre, pass:u.pass, rol:u.rol, conjuntos:u.conjuntos, email:u.email||''};
   await setDoc(doc(db, COL.users, id), data);
   return id;
 }
@@ -838,7 +839,14 @@ function renderDash(){
 
 // ── CONFIG ───────────────────────────────────────────────────────────────────
 function renderConfig(){
-  document.getElementById('chipConjuntos').innerHTML=conjuntos.map((c,i)=>'<div class="chip">'+c+'<button class="chip-del" onclick="delConjunto('+i+')" aria-label="Eliminar">&#x2715;</button></div>').join('');
+  document.getElementById('chipConjuntos').innerHTML=conjuntos.map((c,i)=>{
+    const em=conjuntosEmails[c]||'';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">'+
+      '<span style="font-size:13px;font-weight:500;min-width:160px;">'+c+'</span>'+
+      '<input type="email" style="flex:1;font-size:12px;padding:5px 9px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);" placeholder="correo@edificio.com" value="'+em+'" data-cj="'+i+'" onchange="updateCjEmail('+i+',this.value)">'+
+      '<button class="chip-del" onclick="delConjunto('+i+')" aria-label="Eliminar" style="flex-shrink:0;">&#x2715;</button>'+
+    '</div>';
+  }).join('');
   document.getElementById('chipCategorias').innerHTML=categorias.map((c,i)=>'<div class="chip">'+c+'<button class="chip-del" onclick="delCategoria('+i+')" aria-label="Eliminar">&#x2715;</button></div>').join('');
   document.getElementById('userTableBody').innerHTML=users.map(u=>
     '<tr>'+
@@ -882,6 +890,14 @@ window.delCategoria=async function(i){
   await saveConfig();
   renderConfig();
 };
+window.updateCjEmail=async function(i, email){
+  const nombre = conjuntos[i];
+  if(!nombre) return;
+  conjuntosEmails[nombre] = email;
+  await saveConfig();
+};
+
+
 
 // ── NOTIFICATIONS ─────────────────────────────────────────────────────────────
 function renderNotif(){
@@ -993,18 +1009,26 @@ async function checkAndSendAlerts(){
 
   for(const task of tasksToAlert){
     const dias = daysFrom(task.fecha);
-
-    // Find responsible admin
-    const adminUser = users.find(u=>u.nombre===task.responsable&&u.rol==='admin');
+    const sentTo = new Set();
 
     // Send to director if has email
     if(director&&director.email){
       await sendAlertEmail(director.email, 'Director Operativo', task, dias);
+      sentTo.add(director.email);
     }
 
     // Send to responsible admin if has email
-    if(adminUser&&adminUser.email&&adminUser.email!==director?.email){
+    const adminUser = users.find(u=>u.nombre===task.responsable&&u.rol==='admin');
+    if(adminUser&&adminUser.email&&!sentTo.has(adminUser.email)){
       await sendAlertEmail(adminUser.email, adminUser.nombre, task, dias);
+      sentTo.add(adminUser.email);
+    }
+
+    // Send to conjunto email if configured and not already sent
+    const cjEmail = conjuntosEmails[task.conjunto];
+    if(cjEmail&&!sentTo.has(cjEmail)){
+      await sendAlertEmail(cjEmail, task.conjunto, task, dias);
+      sentTo.add(cjEmail);
     }
   }
 
