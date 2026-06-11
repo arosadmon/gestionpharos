@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#111111">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GestiónPH">
 <title>GestiónPH — Control de pendientes</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
@@ -24,33 +23,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
   --shadow:0 1px 4px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.06);
 }
 #app{min-height:100vh;display:flex;flex-direction:column;max-width:800px;margin:0 auto;background:var(--surface);box-shadow:var(--shadow);}
-
-/* LOGIN */
 .login-screen{flex:1;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg);}
 .login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px 24px;width:100%;max-width:340px;box-shadow:var(--shadow);}
 .login-brand{display:flex;align-items:center;gap:10px;margin-bottom:22px;}
 .login-icon{width:38px;height:38px;background:#111;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;}
-.login-name{font-size:17px;font-weight:600;letter-spacing:-0.3px;}
+.login-name{font-size:17px;font-weight:600;}
 .login-sub{font-size:12px;color:var(--text3);}
 .field{margin-bottom:12px;}
 .field label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:500;}
-.field select,.field input{width:100%;font-size:14px;padding:9px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);transition:border-color .15s;}
+.field select,.field input{width:100%;font-size:14px;padding:9px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);}
 .field select:focus,.field input:focus{outline:none;border-color:#185FA5;}
 .pass-row{display:flex;gap:6px;}
 .pass-row input{flex:1;}
 .btn-eye{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 11px;cursor:pointer;color:var(--text2);font-size:15px;display:flex;align-items:center;}
-.btn-eye:hover{background:var(--border);}
 .btn-login{width:100%;padding:10px;font-size:14px;font-weight:600;border-radius:var(--radius-sm);border:none;background:#111;color:#fff;cursor:pointer;margin-top:6px;}
 .btn-login:hover{background:#333;}
 .login-hint{font-size:11px;color:var(--text3);margin-top:14px;text-align:center;line-height:1.6;border-top:1px solid var(--border);padding-top:12px;}
 .login-hint strong{color:var(--text2);}
 .login-error{font-size:12px;color:var(--danger);margin-top:8px;text-align:center;display:none;}
-
-/* TOPBAR */
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;}
 .topbar-brand{display:flex;align-items:center;gap:9px;}
 .topbar-icon{width:30px;height:30px;background:#111;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;}
-.topbar-name{font-size:14px;font-weight:600;letter-spacing:-0.2px;}
+.topbar-name{font-size:14px;font-weight:600;}
 .topbar-sub{font-size:11px;color:var(--text3);}
 .topbar-right{display:flex;align-items:center;gap:6px;}
 .role-pill{font-size:11px;padding:3px 10px;border-radius:999px;font-weight:500;}
@@ -60,16 +54,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .icon-btn:hover{background:var(--surface2);}
 .notif-wrap{position:relative;}
 .nbadge{position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:9px;font-weight:700;border-radius:999px;min-width:15px;height:15px;display:flex;align-items:center;justify-content:center;padding:0 3px;}
-
-/* NAV */
 .nav-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surface);padding:0 12px;overflow-x:auto;}
 .nav-tab{padding:9px 12px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2);display:flex;align-items:center;gap:5px;white-space:nowrap;margin-bottom:-1px;}
 .nav-tab:hover{color:var(--text);}
 .nav-tab.active{color:var(--text);border-bottom-color:#111;font-weight:500;}
 .view{display:none;}
 .view.active{display:block;}
-
-/* FILTERS */
 .filters-bar{display:flex;gap:7px;padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center;}
 .filters-bar select,.filters-bar input[type=text]{font-size:13px;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);}
 .search-wrap{position:relative;display:flex;align-items:center;}
@@ -77,29 +67,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .search-wrap input{padding-left:28px;width:145px;}
 .btn-primary{display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 14px;border-radius:var(--radius-sm);border:none;background:#111;color:#fff;cursor:pointer;font-weight:500;margin-left:auto;white-space:nowrap;}
 .btn-primary:hover{background:#333;}
-
-/* STATS */
 .stats-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:12px 16px;}
 .stat-card{background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;}
 .stat-label{font-size:11px;color:var(--text2);margin-bottom:3px;}
-.stat-val{font-size:22px;font-weight:600;letter-spacing:-0.5px;}
+.stat-val{font-size:22px;font-weight:600;}
 .stat-val.red{color:var(--danger);}
 .stat-val.amber{color:var(--warning);}
 .stat-val.green{color:var(--success);}
-.stat-val.blue{color:var(--info);}
-
-/* EXPORT ROW */
 .export-row{display:flex;gap:7px;padding:0 16px 10px;flex-wrap:wrap;}
 .exp-btn{display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:12px;color:var(--text2);}
-.exp-btn:hover{background:var(--surface);border-color:var(--border2);}
-
-/* TASK CARDS */
+.exp-btn:hover{background:var(--surface);}
 .task-list{padding:0 16px 80px;display:flex;flex-direction:column;gap:7px;}
 .task-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px 14px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;cursor:pointer;transition:border-color .15s,box-shadow .15s;}
 .task-card:hover{border-color:var(--border2);box-shadow:0 2px 8px rgba(0,0,0,0.06);}
 .task-card.vencida{border-left:3px solid var(--danger);border-radius:0 var(--radius) var(--radius) 0;}
 .task-card.proxima{border-left:3px solid var(--warning);border-radius:0 var(--radius) var(--radius) 0;}
-.task-title{font-size:13px;font-weight:500;margin-bottom:5px;letter-spacing:-0.1px;}
+.task-title{font-size:13px;font-weight:500;margin-bottom:5px;}
 .task-meta{display:flex;flex-wrap:wrap;gap:4px;}
 .tag{font-size:11px;padding:2px 8px;border-radius:999px;}
 .tag-cj{background:var(--info-bg);color:var(--info);}
@@ -108,7 +91,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .fecha{font-size:11px;color:var(--text3);margin-top:5px;display:flex;align-items:center;gap:4px;}
 .fecha.red{color:var(--danger);}
 .fecha.amber{color:var(--warning);}
-.epill{font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;cursor:pointer;white-space:nowrap;border:none;transition:opacity .15s;}
+.epill{font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;cursor:pointer;white-space:nowrap;border:none;}
 .epill:hover{opacity:.8;}
 .ep-Pendiente{background:var(--warning-bg);color:var(--warning);}
 .ep-En-proceso{background:var(--info-bg);color:var(--info);}
@@ -116,8 +99,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .ep-Vencida{background:var(--danger-bg);color:var(--danger);}
 .empty-state{text-align:center;color:var(--text3);font-size:13px;padding:48px 0;}
 .empty-state i{font-size:32px;display:block;margin-bottom:10px;opacity:.4;}
-
-/* DASHBOARD */
 .dash-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 4px;}
 .dash-header span{font-size:13px;color:var(--text2);}
 .dash-header select{font-size:12px;padding:4px 9px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);}
@@ -134,22 +115,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .prog-bar-bg{flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;}
 .prog-bar{height:100%;border-radius:3px;}
 .prog-n{font-size:11px;color:var(--text3);width:14px;text-align:right;}
-
-/* CONFIG */
 .config-wrap{padding:16px 16px 80px;}
 .cfg-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
-.cfg-title{font-size:14px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;letter-spacing:-0.2px;}
+.cfg-title{font-size:14px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
 .chip-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
 .chip{display:flex;align-items:center;gap:5px;font-size:12px;padding:4px 10px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);color:var(--text);}
-.chip-del{background:transparent;border:none;cursor:pointer;color:var(--text3);font-size:12px;padding:0;line-height:1;display:flex;align-items:center;}
+.chip-del{background:transparent;border:none;cursor:pointer;color:var(--text3);font-size:12px;padding:0;line-height:1;}
 .chip-del:hover{color:var(--danger);}
 .add-row{display:flex;gap:6px;}
 .add-row input{flex:1;font-size:13px;padding:7px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);}
 .add-row input:focus{outline:none;border-color:#185FA5;}
 .btn-add{font-size:13px;padding:7px 13px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;white-space:nowrap;}
 .btn-add:hover{background:var(--border);}
-
-/* USER TABLE */
 .user-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:10px;}
 .user-table th{font-size:11px;color:var(--text3);font-weight:500;text-align:left;padding:5px 8px;border-bottom:1px solid var(--border);}
 .user-table td{padding:9px 8px;border-bottom:1px solid var(--border);vertical-align:middle;}
@@ -164,15 +141,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .btn-edit-sm:hover{background:var(--surface2);}
 .btn-del-sm{font-size:11px;padding:3px 9px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--danger);cursor:pointer;}
 .btn-del-sm:hover{background:var(--danger-bg);}
-
-/* INFO BOX */
 .info-box{background:var(--surface2);border-radius:var(--radius-sm);padding:9px 13px;font-size:12px;color:var(--text2);margin-bottom:12px;display:flex;align-items:flex-start;gap:8px;line-height:1.5;border:1px solid var(--border);}
-
-/* OVERLAYS */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:50;align-items:flex-start;justify-content:center;padding:40px 16px 16px;overflow-y:auto;}
 .overlay.open{display:flex;}
 .modal{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:20px;width:100%;max-width:460px;box-shadow:var(--shadow);}
-.modal-title{font-size:15px;font-weight:600;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;letter-spacing:-0.2px;}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
 .modal-close{background:transparent;border:none;cursor:pointer;font-size:18px;color:var(--text3);padding:0 4px;}
 .modal-close:hover{color:var(--text);}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
@@ -180,16 +153,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .btn-save:hover{background:#333;}
 .btn-danger{width:100%;padding:8px;font-size:13px;border-radius:var(--radius-sm);border:1px solid #fca5a5;background:transparent;color:var(--danger);cursor:pointer;margin-top:6px;}
 .btn-danger:hover{background:var(--danger-bg);}
-
-/* CHECKBOX LIST for conjuntos */
 .cj-check-list{display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;padding:4px 0;margin-bottom:4px;}
-.cj-check-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;background:var(--surface);transition:border-color .12s;}
-.cj-check-item:hover{border-color:var(--border2);}
+.cj-check-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;background:var(--surface);}
 .cj-check-item.selected{border-color:#185FA5;background:var(--info-bg);}
 .cj-check-item input[type=checkbox]{accent-color:#185FA5;width:15px;height:15px;cursor:pointer;flex-shrink:0;}
 .cj-check-label{font-size:13px;cursor:pointer;}
-
-/* NOTIF */
 .notif-dd{display:none;position:absolute;top:38px;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);width:290px;z-index:60;padding:12px;box-shadow:var(--shadow);}
 .notif-dd.open{display:block;}
 .notif-hdr{font-size:13px;font-weight:600;margin-bottom:8px;}
@@ -198,11 +166,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .ndot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:middle;}
 .ndot.red{background:var(--danger);}
 .ndot.amber{background:var(--warning);}
-
+.loading-screen{position:fixed;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;gap:12px;}
+.loading-screen .spin{width:36px;height:36px;border:3px solid #eee;border-top-color:#111;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-screen p{font-size:13px;color:#999;}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;margin-right:5px;}
+.sync-dot.syncing{background:var(--warning);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
 @media(max-width:480px){
   .stats-row{grid-template-columns:repeat(2,1fr);}
   .topbar-right .role-pill{display:none;}
-  .search-wrap input{width:100px;}
   .field-row{grid-template-columns:1fr;}
 }
 </style>
@@ -210,8 +183,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <body>
 <div id="app">
 
+<!-- LOADING -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="spin"></div>
+  <p>Conectando con la base de datos...</p>
+</div>
+
 <!-- LOGIN -->
-<div id="screen-login" class="login-screen">
+<div id="screen-login" class="login-screen" style="display:none;">
   <div class="login-card">
     <div class="login-brand">
       <div class="login-icon"><i class="ti ti-building"></i></div>
@@ -236,7 +215,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
   <div class="topbar">
     <div class="topbar-brand">
       <div class="topbar-icon"><i class="ti ti-building"></i></div>
-      <div><div class="topbar-name">GestiónPH</div><div class="topbar-sub" id="topbarSub"></div></div>
+      <div>
+        <div class="topbar-name">GestiónPH</div>
+        <div class="topbar-sub" id="topbarSub"></div>
+      </div>
     </div>
     <div class="topbar-right">
       <span class="role-pill" id="rolePill"></span>
@@ -299,9 +281,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
       </div>
       <div class="cfg-card">
         <div class="cfg-title"><i class="ti ti-users"></i> Administradores delegados</div>
-        <div class="info-box"><i class="ti ti-info-circle" style="flex-shrink:0;font-size:16px;margin-top:1px;"></i><span>Cada administrador puede tener <strong>uno o varios conjuntos</strong> asignados. Solo verá las tareas de sus conjuntos.</span></div>
+        <div class="info-box"><i class="ti ti-info-circle" style="flex-shrink:0;font-size:16px;margin-top:1px;"></i><span>Cada administrador puede tener uno o varios conjuntos. Los datos se sincronizan en tiempo real para todos.</span></div>
         <table class="user-table">
-          <thead><tr><th>Nombre</th><th>Conjuntos asignados</th><th>Rol</th><th>Acciones</th></tr></thead>
+          <thead><tr><th>Nombre</th><th>Conjuntos</th><th>Rol</th><th>Acciones</th></tr></thead>
           <tbody id="userTableBody"></tbody>
         </table>
         <button class="btn-add" onclick="openUserModal()"><i class="ti ti-plus"></i> Nuevo administrador</button>
@@ -316,7 +298,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
     <div class="modal-title"><span id="taskModalTitle">Nueva tarea</span><button class="modal-close" onclick="closeOverlay('overlayTask')" aria-label="Cerrar">✕</button></div>
     <div class="field"><label>Título</label><input type="text" id="fTitulo" placeholder="Ej: Revisión de extintores"></div>
     <div class="field-row">
-      <div class="field"><label>Conjunto</label><select id="fCj"></select></div>
+      <div class="field"><label>Conjunto</label><select id="fCj" onchange="updateRespList()"></select></div>
       <div class="field"><label>Categoría</label><select id="fCat"></select></div>
     </div>
     <div class="field-row">
@@ -329,17 +311,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
   </div>
 </div>
 
-<!-- MODAL USUARIO (nuevo / editar) -->
+<!-- MODAL USUARIO -->
 <div class="overlay" id="overlayUser" onclick="closeIfOutside(event,'overlayUser')">
   <div class="modal">
     <div class="modal-title"><span id="userModalTitle">Nuevo administrador</span><button class="modal-close" onclick="closeOverlay('overlayUser')" aria-label="Cerrar">✕</button></div>
-    <div class="info-box"><i class="ti ti-key" style="flex-shrink:0;font-size:16px;"></i><span>Selecciona uno o varios conjuntos para este administrador. Verá únicamente las tareas de esos conjuntos.</span></div>
+    <div class="info-box"><i class="ti ti-key" style="flex-shrink:0;font-size:16px;"></i><span>Selecciona uno o varios conjuntos. El administrador solo verá las tareas de esos conjuntos.</span></div>
     <div class="field"><label>Nombre completo</label><input type="text" id="uNombre" placeholder="Ej: Laura Villada"></div>
     <div class="field">
-      <label>Conjuntos asignados <span style="color:var(--text3);font-weight:400;">(selecciona uno o más)</span></label>
+      <label>Conjuntos asignados</label>
       <div class="cj-check-list" id="uCjList"></div>
     </div>
-    <div class="field" id="passField">
+    <div class="field">
       <label>Contraseña <span id="passOptLabel" style="color:var(--text3);font-weight:400;"></span></label>
       <input type="password" id="uPass" placeholder="Mínimo 4 caracteres">
     </div>
@@ -348,112 +330,203 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
   </div>
 </div>
 
-<script>
-// ─── STORAGE ───────────────────────────────────────────────────────────────
-const SK={tasks:'gph_tasks',users:'gph_users',cj:'gph_conjuntos',cat:'gph_categorias'};
-function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;}}
-function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import {
+  getFirestore, collection, doc, getDocs, getDoc,
+  setDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-// ─── DEFAULT DATA ───────────────────────────────────────────────────────────
-// conjuntos stored as array<string>; users.conjuntos is now array<string>
-const DEF_USERS=[
-  {id:1,nombre:'Director Operativo',pass:'admin123',rol:'director',conjuntos:[]},
-  {id:2,nombre:'Laura Villada',pass:'admin123',rol:'admin',conjuntos:['Portal del Valle']},
-  {id:3,nombre:'César Ardila',pass:'admin123',rol:'admin',conjuntos:['Portal del Valle']},
-  {id:4,nombre:'Adm. Torres del Parque',pass:'admin123',rol:'admin',conjuntos:['Torres del Parque']},
-  {id:5,nombre:'Adm. Los Álamos',pass:'admin123',rol:'admin',conjuntos:['Los Álamos']},
-  {id:6,nombre:'Adm. Reserva del Río',pass:'admin123',rol:'admin',conjuntos:['Reserva del Río']},
-];
-const DEF_CJ=['Portal del Valle','Torres del Parque','Los Álamos','Reserva del Río'];
-const DEF_CAT=['Financiero','Infraestructura','Seguridad','Administrativo','Jurídico','Mantenimiento','Convivencia'];
+// ── FIREBASE CONFIG ─────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyA5WCT0Vy7Jgv54gXr4MEokJlWNoe1m6Q0",
+  authDomain: "gestionph-794c4.firebaseapp.com",
+  projectId: "gestionph-794c4",
+  storageBucket: "gestionph-794c4.firebasestorage.app",
+  messagingSenderId: "864608530780",
+  appId: "1:864608530780:web:61813c6bb9c7ee58e09199"
+};
 
-// ─── STATE ─────────────────────────────────────────────────────────────────
-let users     =load(SK.users, DEF_USERS);
-let conjuntos =load(SK.cj,    DEF_CJ);
-let categorias=load(SK.cat,   DEF_CAT);
-let tasks     =load(SK.tasks, []);
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
 
-// Migrate old users that have .conjunto (string) to .conjuntos (array)
-users=users.map(u=>{
-  if(!u.conjuntos){u.conjuntos=u.conjunto?[u.conjunto]:[];}
-  delete u.conjunto;return u;
-});
-save(SK.users,users);
+// ── COLLECTIONS ─────────────────────────────────────────────────────────────
+const COL = {
+  tasks:    'tasks',
+  users:    'users',
+  config:   'config'
+};
 
-let nextUserId=Math.max(0,...users.map(u=>u.id))+1;
-let nextTaskId=Math.max(0,...tasks.map(t=>t.id),0)+1;
-let currentUser=null;
-let editingTaskId=null;
-let editingUserId=null;
+// ── STATE ───────────────────────────────────────────────────────────────────
+let tasks      = [];
+let users      = [];
+let conjuntos  = ['Portal del Valle','Torres del Parque','Los Alamos','Reserva del Rio'];
+let categorias = ['Financiero','Infraestructura','Seguridad','Administrativo','Juridico','Mantenimiento','Convivencia'];
+let currentUser   = null;
+let editingTaskId = null;
+let editingUserId = null;
+let unsubTasks    = null;
 
-// Seed demo tasks
-if(!tasks.length){
-  const T=new Date();
-  function od(d){const x=new Date(T);x.setDate(x.getDate()+d);return x.toISOString().slice(0,10);}
-  tasks=[
-    {id:1,titulo:'Revisión contrato vigilancia',conjunto:'Portal del Valle',categoria:'Seguridad',estado:'Pendiente',fecha:od(-3),responsable:'Laura Villada'},
-    {id:2,titulo:'Envío informe financiero abril',conjunto:'Torres del Parque',categoria:'Financiero',estado:'Pendiente',fecha:od(0),responsable:'Adm. Torres del Parque'},
-    {id:3,titulo:'Cotización planta eléctrica',conjunto:'Los Álamos',categoria:'Infraestructura',estado:'En proceso',fecha:od(2),responsable:'Adm. Los Álamos'},
-    {id:4,titulo:'Radicación licencia de construcción',conjunto:'Portal del Valle',categoria:'Jurídico',estado:'En proceso',fecha:od(10),responsable:'Laura Villada'},
-    {id:5,titulo:'Convocatoria asamblea extraordinaria',conjunto:'Reserva del Río',categoria:'Administrativo',estado:'Pendiente',fecha:od(18),responsable:'Adm. Reserva del Río'},
-    {id:6,titulo:'Pago seguro colectivo',conjunto:'Torres del Parque',categoria:'Financiero',estado:'Completada',fecha:od(-5),responsable:'Adm. Torres del Parque'},
-    {id:7,titulo:'Mantenimiento tanques de agua',conjunto:'Los Álamos',categoria:'Mantenimiento',estado:'Pendiente',fecha:od(5),responsable:'Adm. Los Álamos'},
-    {id:8,titulo:'Actualización reglamento interno',conjunto:'Portal del Valle',categoria:'Administrativo',estado:'Pendiente',fecha:od(7),responsable:'César Ardila'},
-    {id:9,titulo:'Renovación póliza todo riesgo',conjunto:'Reserva del Río',categoria:'Financiero',estado:'Pendiente',fecha:od(3),responsable:'Adm. Reserva del Río'},
-    {id:10,titulo:'Reparación cubierta zona húmeda',conjunto:'Torres del Parque',categoria:'Infraestructura',estado:'En proceso',fecha:od(14),responsable:'Adm. Torres del Parque'},
-  ];
-  nextTaskId=11;save(SK.tasks,tasks);
-}
-
-// ─── DATE HELPERS ───────────────────────────────────────────────────────────
+// ── DATE HELPERS ─────────────────────────────────────────────────────────────
 function pad(n){return String(n).padStart(2,'0');}
-function todayStr(){const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
-function daysFrom(s){const t=new Date();t.setHours(0,0,0,0);const d=new Date(s+'T00:00:00');d.setHours(0,0,0,0);return Math.round((d-t)/86400000);}
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function daysFrom(s){
+  const t=new Date();t.setHours(0,0,0,0);
+  const d=new Date(s+'T00:00:00');d.setHours(0,0,0,0);
+  return Math.round((d-t)/86400000);
+}
 function fmtDate(s){return new Date(s+'T00:00:00').toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'});}
 
-// ─── TASK HELPERS ───────────────────────────────────────────────────────────
+// ── TASK HELPERS ─────────────────────────────────────────────────────────────
 function isVencida(t){return t.estado!=='Completada'&&daysFrom(t.fecha)<0;}
 function isProxima(t){const d=daysFrom(t.fecha);return t.estado!=='Completada'&&d>=0&&d<=2;}
 function effEst(t){return(isVencida(t)||t.estado==='Vencida')?'Vencida':t.estado;}
-function cardCls(t){if(isVencida(t)||t.estado==='Vencida')return'vencida';if(isProxima(t))return'proxima';return'';}
-function fechaCls(t){if(isVencida(t)||t.estado==='Vencida')return'red';if(isProxima(t))return'amber';return'';}
-function epCls(e){return'ep-'+e.replace(' ','-');}
+function cardCls(t){if(isVencida(t)||t.estado==='Vencida')return 'vencida';if(isProxima(t))return 'proxima';return '';}
+function fechaCls(t){if(isVencida(t)||t.estado==='Vencida')return 'red';if(isProxima(t))return 'amber';return '';}
+function epCls(e){return 'ep-'+e.replace(' ','-');}
 function fechaLabel(t){
   const d=daysFrom(t.fecha);
   if(t.estado==='Completada')return fmtDate(t.fecha);
-  if(d<0)return`Venció hace ${Math.abs(d)} día${Math.abs(d)!==1?'s':''}`;
-  if(d===0)return'Vence hoy';if(d===1)return'Vence mañana';
-  if(d<=2)return`Vence en ${d} días`;return fmtDate(t.fecha);
+  if(d<0)return 'Vencio hace '+Math.abs(d)+' dia'+(Math.abs(d)!==1?'s':'');
+  if(d===0)return 'Vence hoy';
+  if(d===1)return 'Vence manana';
+  if(d<=2)return 'Vence en '+d+' dias';
+  return fmtDate(t.fecha);
 }
-
-// Visible tasks for current user (supports multiple conjuntos)
 function visibleTasks(){
   if(!currentUser)return[];
   if(currentUser.rol==='director')return tasks;
   return tasks.filter(t=>currentUser.conjuntos.includes(t.conjunto));
 }
-
-// Admins that can be responsible for a given conjunto
 function adminsForCj(cj){
   return users.filter(u=>u.rol==='admin'&&u.conjuntos.includes(cj));
 }
 
-// ─── LOGIN ──────────────────────────────────────────────────────────────────
+// ── FIREBASE: LOAD CONFIG ────────────────────────────────────────────────────
+async function loadConfig(){
+  try{
+    const snap = await getDoc(doc(db, COL.config, 'settings'));
+    if(snap.exists()){
+      const d = snap.data();
+      if(d.conjuntos) conjuntos = d.conjuntos;
+      if(d.categorias) categorias = d.categorias;
+    }
+  }catch(e){console.warn('Config load error',e);}
+}
+
+async function saveConfig(){
+  try{
+    await setDoc(doc(db, COL.config, 'settings'), {conjuntos, categorias});
+  }catch(e){console.warn('Config save error',e);}
+}
+
+// ── FIREBASE: USERS ──────────────────────────────────────────────────────────
+async function loadUsers(){
+  const snap = await getDocs(collection(db, COL.users));
+  users = [];
+  snap.forEach(d=>{
+    const u = d.data();
+    u.id = d.id;
+    if(!u.conjuntos) u.conjuntos = u.conjunto?[u.conjunto]:[];
+    users.push(u);
+  });
+  if(!users.length){
+    await seedUsers();
+    await loadUsers();
+  }
+}
+
+async function seedUsers(){
+  const defaults = [
+    {nombre:'Director Operativo',pass:'admin123',rol:'director',conjuntos:[]},
+    {nombre:'Laura Villada',pass:'admin123',rol:'admin',conjuntos:['Portal del Valle']},
+    {nombre:'Adm. Torres del Parque',pass:'admin123',rol:'admin',conjuntos:['Torres del Parque']},
+    {nombre:'Adm. Los Alamos',pass:'admin123',rol:'admin',conjuntos:['Los Alamos']},
+    {nombre:'Adm. Reserva del Rio',pass:'admin123',rol:'admin',conjuntos:['Reserva del Rio']},
+  ];
+  for(const u of defaults){
+    const id = u.nombre.toLowerCase().replace(/[^a-z0-9]/g,'_');
+    await setDoc(doc(db, COL.users, id), u);
+  }
+}
+
+async function saveUserDoc(u){
+  const id = u.id || u.nombre.toLowerCase().replace(/[^a-z0-9]/g,'_')+'_'+Date.now();
+  const data = {nombre:u.nombre, pass:u.pass, rol:u.rol, conjuntos:u.conjuntos};
+  await setDoc(doc(db, COL.users, id), data);
+  return id;
+}
+
+async function deleteUserDoc(id){
+  await deleteDoc(doc(db, COL.users, id));
+}
+
+// ── FIREBASE: TASKS (realtime) ───────────────────────────────────────────────
+function subscribeToTasks(){
+  if(unsubTasks) unsubTasks();
+  unsubTasks = onSnapshot(collection(db, COL.tasks), snap=>{
+    tasks = [];
+    snap.forEach(d=>{
+      const t = d.data();
+      t.id = d.id;
+      tasks.push(t);
+    });
+    if(currentUser) renderAll();
+  });
+}
+
+async function saveTaskDoc(t){
+  const id = t.id || 'task_'+Date.now();
+  const data = {
+    titulo:t.titulo, conjunto:t.conjunto, categoria:t.categoria,
+    estado:t.estado, fecha:t.fecha, responsable:t.responsable||''
+  };
+  await setDoc(doc(db, COL.tasks, id), data);
+  return id;
+}
+
+async function updateTaskEstado(id, estado){
+  await updateDoc(doc(db, COL.tasks, id), {estado});
+}
+
+async function deleteTaskDoc(id){
+  await deleteDoc(doc(db, COL.tasks, id));
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+async function init(){
+  try{
+    await loadConfig();
+    await loadUsers();
+    subscribeToTasks();
+    buildLoginSelect();
+    document.getElementById('loadingScreen').style.display='none';
+    document.getElementById('screen-login').style.display='flex';
+  }catch(e){
+    console.error('Init error',e);
+    document.querySelector('#loadingScreen p').textContent='Error de conexion. Verifica tu internet.';
+  }
+}
+
+// ── LOGIN ────────────────────────────────────────────────────────────────────
 function buildLoginSelect(){
   const s=document.getElementById('loginUser');
   s.innerHTML=users.map(u=>{
-    const label=u.rol==='director'?'Director Operativo':u.nombre+(u.conjuntos.length?' — '+u.conjuntos.join(', '):'');
-    return '<option value="'+u.id+'">'+ label +'</option>';
+    const label=u.rol==='director'?'Director Operativo':u.nombre+' — '+u.conjuntos.join(', ');
+    return '<option value="'+u.id+'">'+label+'</option>';
   }).join('');
 }
-function togglePass(){
+
+window.togglePass=function(){
   const i=document.getElementById('loginPass');
   const ico=document.getElementById('eyeIcon');
   i.type=i.type==='password'?'text':'password';
   ico.className=i.type==='password'?'ti ti-eye':'ti ti-eye-off';
-}
-function doLogin(){
-  const uid=parseInt(document.getElementById('loginUser').value);
+};
+
+window.doLogin=function(){
+  const uid=document.getElementById('loginUser').value;
   const pass=document.getElementById('loginPass').value;
   const u=users.find(x=>x.id===uid&&x.pass===pass);
   if(!u){document.getElementById('loginError').style.display='block';return;}
@@ -461,77 +534,76 @@ function doLogin(){
   document.getElementById('loginPass').value='';
   currentUser=u;
   document.getElementById('screen-login').style.display='none';
-  document.getElementById('screen-app').style.display='flex';
+  const appEl=document.getElementById('screen-app');
+  appEl.style.display='flex';
   setupApp();
-}
-function doLogout(){
+};
+
+window.doLogout=function(){
   currentUser=null;
   document.getElementById('screen-app').style.display='none';
   document.getElementById('screen-login').style.display='flex';
   buildLoginSelect();
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-tareas').classList.add('active');
-}
+};
 
-// ─── APP SETUP ──────────────────────────────────────────────────────────────
+// ── APP SETUP ────────────────────────────────────────────────────────────────
 function setupApp(){
   const dir=currentUser.rol==='director';
-  const subLabel=dir?'Director operativo':currentUser.conjuntos.join(' · ')||'Sin conjuntos';
-  document.getElementById('topbarSub').textContent=subLabel;
+  document.getElementById('topbarSub').textContent=dir?'Director operativo':currentUser.conjuntos.join(' - ');
   const rp=document.getElementById('rolePill');
   rp.textContent=dir?'Director operativo':'Administrador delegado';
   rp.className='role-pill '+(dir?'role-director':'role-admin');
 
-  // Nav tabs
   const tabs=document.getElementById('navTabs');
   tabs.innerHTML='';
   const defs=dir
-    ?[{id:'tareas',label:'Tareas',icon:'ti-list-check'},{id:'dashboard',label:'Dashboard',icon:'ti-layout-dashboard'},{id:'config',label:'Configuración',icon:'ti-settings'}]
+    ?[{id:'tareas',label:'Tareas',icon:'ti-list-check'},{id:'dashboard',label:'Dashboard',icon:'ti-layout-dashboard'},{id:'config',label:'Configuracion',icon:'ti-settings'}]
     :[{id:'tareas',label:'Mis tareas',icon:'ti-list-check'}];
   defs.forEach((t,i)=>{
     const el=document.createElement('div');
     el.className='nav-tab'+(i===0?' active':'');
-    el.innerHTML='<i class="ti '+t.icon+'">'+'</i> '+t.label;
+    el.innerHTML='<i class="ti '+t.icon+'"></i> '+t.label;
     el.onclick=()=>switchTab(t.id,el);
     tabs.appendChild(el);
   });
 
-  // Filters
   const filtCj=document.getElementById('filtCj');
   if(dir){
-    filtCj.innerHTML='<option value="">Todos los conjuntos</option>'+conjuntos.map(c=>`<option>${c}</option>`).join('');
+    filtCj.innerHTML='<option value="">Todos los conjuntos</option>'+conjuntos.map(c=>'<option>'+c+'</option>').join('');
     filtCj.style.display='';
-  } else {
+  }else{
     const opts=currentUser.conjuntos;
-    filtCj.innerHTML=(opts.length>1?'<option value="">Todos mis conjuntos</option>':'')+opts.map(c=>`<option>${c}</option>`).join('');
+    filtCj.innerHTML=(opts.length>1?'<option value="">Todos mis conjuntos</option>':'')+opts.map(c=>'<option>'+c+'</option>').join('');
     filtCj.style.display=opts.length>1?'':'none';
     if(opts.length===1)filtCj.value=opts[0];
   }
-  document.getElementById('filtCat').innerHTML='<option value="">Todas las categorías</option>'+categorias.map(c=>`<option>${c}</option>`).join('');
+  document.getElementById('filtCat').innerHTML='<option value="">Todas las categorias</option>'+categorias.map(c=>'<option>'+c+'</option>').join('');
 
   const df=document.getElementById('dashFilter');
-  df.innerHTML='<option value="">Todos</option>'+conjuntos.map(c=>`<option>${c}</option>`).join('');
+  df.innerHTML='<option value="">Todos</option>'+conjuntos.map(c=>'<option>'+c+'</option>').join('');
 
   renderAll();
 }
 
-function switchTab(tab,el){
+window.switchTab=function(tab,el){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('view-'+tab).classList.add('active');
   if(tab==='dashboard')renderDash();
   if(tab==='config')renderConfig();
-}
+};
 
-// ─── RENDER TASKS ───────────────────────────────────────────────────────────
+// ── RENDER TASKS ─────────────────────────────────────────────────────────────
 function renderStats(){
   const vt=visibleTasks();
-  document.getElementById('statsRow').innerHTML=`
-    <div class="stat-card"><div class="stat-label">Total</div><div class="stat-val">${vt.length}</div></div>
-    <div class="stat-card"><div class="stat-label">Vencidas</div><div class="stat-val red">${vt.filter(t=>isVencida(t)||t.estado==='Vencida').length}</div></div>
-    <div class="stat-card"><div class="stat-label">Por vencer</div><div class="stat-val amber">${vt.filter(isProxima).length}</div></div>
-    <div class="stat-card"><div class="stat-label">Completadas</div><div class="stat-val green">${vt.filter(t=>t.estado==='Completada').length}</div></div>`;
+  document.getElementById('statsRow').innerHTML=
+    '<div class="stat-card"><div class="stat-label">Total</div><div class="stat-val">'+vt.length+'</div></div>'+
+    '<div class="stat-card"><div class="stat-label">Vencidas</div><div class="stat-val red">'+vt.filter(t=>isVencida(t)||t.estado==='Vencida').length+'</div></div>'+
+    '<div class="stat-card"><div class="stat-label">Por vencer</div><div class="stat-val amber">'+vt.filter(isProxima).length+'</div></div>'+
+    '<div class="stat-card"><div class="stat-label">Completadas</div><div class="stat-val green">'+vt.filter(t=>t.estado==='Completada').length+'</div></div>';
 }
 
 function getFiltered(){
@@ -555,44 +627,41 @@ function renderTasks(){
   if(!f.length){list.innerHTML='<div class="empty-state"><i class="ti ti-mood-happy"></i>Sin tareas con estos filtros</div>';return;}
   const dir=currentUser.rol==='director';
   const multi=!dir&&currentUser.conjuntos.length>1;
-  list.innerHTML=f.map(t=>`
-    <div class="task-card ${cardCls(t)}" onclick="openTaskModal(${t.id})">
-      <div>
-        <div class="task-title">${t.titulo}</div>
-        <div class="task-meta">
-          ${(dir||multi)?`<span class="tag tag-cj"><i class="ti ti-building" style="font-size:10px;"></i> ${t.conjunto}</span>`:''}
-          <span class="tag tag-cat">${t.categoria}</span>
-          <span class="tag tag-resp"><i class="ti ti-user" style="font-size:10px;"></i> ${t.responsable}</span>
-        </div>
-        <div class="fecha ${fechaCls(t)}"><i class="ti ti-calendar" style="font-size:11px;"></i> ${fechaLabel(t)}</div>
-      </div>
-      <div><button class="epill ${epCls(effEst(t))}" onclick="cycleEstado(event,${t.id})">${effEst(t)}</button></div>
-    </div>`).join('');
+  list.innerHTML=f.map(t=>{
+    const showCj=dir||multi;
+    return '<div class="task-card '+cardCls(t)+'" onclick="openTaskModal(\''+t.id+'\')">'+
+      '<div>'+
+      '<div class="task-title">'+t.titulo+'</div>'+
+      '<div class="task-meta">'+
+      (showCj?'<span class="tag tag-cj"><i class="ti ti-building" style="font-size:10px;"></i> '+t.conjunto+'</span>':'')+
+      '<span class="tag tag-cat">'+t.categoria+'</span>'+
+      '<span class="tag tag-resp"><i class="ti ti-user" style="font-size:10px;"></i> '+t.responsable+'</span>'+
+      '</div>'+
+      '<div class="fecha '+fechaCls(t)+'"><i class="ti ti-calendar" style="font-size:11px;"></i> '+fechaLabel(t)+'</div>'+
+      '</div>'+
+      '<div><button class="epill '+epCls(effEst(t))+'" onclick="cycleEstado(event,\''+t.id+'\')">'+effEst(t)+'</button></div>'+
+      '</div>';
+  }).join('');
 }
 
-function cycleEstado(e,id){
+window.cycleEstado=async function(e,id){
   e.stopPropagation();
   const orden=['Pendiente','En proceso','Completada'];
   const t=tasks.find(x=>x.id===id);if(!t)return;
   const cur=orden.includes(t.estado)?t.estado:'Pendiente';
-  t.estado=orden[(orden.indexOf(cur)+1)%orden.length];
-  save(SK.tasks,tasks);renderAll();
-}
+  const next=orden[(orden.indexOf(cur)+1)%orden.length];
+  await updateTaskEstado(id, next);
+};
 
-// ─── TASK MODAL ─────────────────────────────────────────────────────────────
-function openTaskModal(id){
+// ── TASK MODAL ───────────────────────────────────────────────────────────────
+window.openTaskModal=function(id){
   editingTaskId=id||null;
   const dir=currentUser.rol==='director';
-
-  // Populate conjunto selector
   const fCj=document.getElementById('fCj');
   const availCj=dir?conjuntos:currentUser.conjuntos;
-  fCj.innerHTML=availCj.map(c=>`<option>${c}</option>`).join('');
+  fCj.innerHTML=availCj.map(c=>'<option>'+c+'</option>').join('');
   fCj.disabled=!dir&&availCj.length===1;
-  fCj.onchange=()=>updateRespList();
-
-  document.getElementById('fCat').innerHTML=categorias.map(c=>`<option>${c}</option>`).join('');
-
+  document.getElementById('fCat').innerHTML=categorias.map(c=>'<option>'+c+'</option>').join('');
   if(id){
     const t=tasks.find(x=>x.id===id);
     document.getElementById('taskModalTitle').textContent='Editar tarea';
@@ -603,7 +672,7 @@ function openTaskModal(id){
     document.getElementById('fFecha').value=t.fecha;
     updateRespList(t.responsable);
     document.getElementById('btnEliminar').style.display=dir?'block':'none';
-  } else {
+  }else{
     document.getElementById('taskModalTitle').textContent='Nueva tarea';
     document.getElementById('fTitulo').value='';
     document.getElementById('fFecha').value=todayStr();
@@ -612,36 +681,40 @@ function openTaskModal(id){
     document.getElementById('btnEliminar').style.display='none';
   }
   document.getElementById('overlayTask').classList.add('open');
-}
+};
 
-function updateRespList(selectedResp){
+window.updateRespList=function(sel){
   const cj=document.getElementById('fCj').value;
   const admins=adminsForCj(cj);
   const fr=document.getElementById('fResp');
-  fr.innerHTML=admins.length
-    ?admins.map(u=>`<option>${u.nombre}</option>`).join('')
-    :'<option value="">Sin responsable asignado</option>';
-  if(selectedResp)fr.value=selectedResp;
-}
+  fr.innerHTML=admins.length?admins.map(u=>'<option>'+u.nombre+'</option>').join(''):'<option value="">Sin responsable</option>';
+  if(sel)fr.value=sel;
+};
 
-function saveTask(){
+window.saveTask=async function(){
   const titulo=document.getElementById('fTitulo').value.trim();
   if(!titulo){document.getElementById('fTitulo').focus();return;}
-  const data={titulo,conjunto:document.getElementById('fCj').value,categoria:document.getElementById('fCat').value,estado:document.getElementById('fEst').value,fecha:document.getElementById('fFecha').value,responsable:document.getElementById('fResp').value||''};
-  if(editingTaskId){const i=tasks.findIndex(x=>x.id===editingTaskId);tasks[i]={...tasks[i],...data};}
-  else{tasks.push({id:nextTaskId++,...data});}
-  save(SK.tasks,tasks);
-  closeOverlay('overlayTask');renderAll();
-}
+  const data={
+    titulo,
+    conjunto:document.getElementById('fCj').value,
+    categoria:document.getElementById('fCat').value,
+    estado:document.getElementById('fEst').value,
+    fecha:document.getElementById('fFecha').value,
+    responsable:document.getElementById('fResp').value||''
+  };
+  if(editingTaskId){data.id=editingTaskId;}
+  await saveTaskDoc(data);
+  closeOverlay('overlayTask');
+};
 
-function deleteTask(){
+window.deleteTask=async function(){
   if(!editingTaskId)return;
-  if(!confirm('¿Eliminar esta tarea?'))return;
-  tasks=tasks.filter(t=>t.id!==editingTaskId);
-  save(SK.tasks,tasks);closeOverlay('overlayTask');renderAll();
-}
+  if(!confirm('Eliminar esta tarea?'))return;
+  await deleteTaskDoc(editingTaskId);
+  closeOverlay('overlayTask');
+};
 
-// ─── USER MODAL ─────────────────────────────────────────────────────────────
+// ── USER MODAL ───────────────────────────────────────────────────────────────
 function buildCjCheckList(selectedCjs){
   const container=document.getElementById('uCjList');
   container.innerHTML='';
@@ -650,76 +723,86 @@ function buildCjCheckList(selectedCjs){
     const label=document.createElement('label');
     label.className='cj-check-item'+(checked?' selected':'');
     const cb=document.createElement('input');
-    cb.type='checkbox';
-    cb.value=c;
-    cb.checked=!!checked;
+    cb.type='checkbox';cb.value=c;cb.checked=!!checked;
     cb.onchange=function(){this.closest('.cj-check-item').classList.toggle('selected',this.checked);};
     const span=document.createElement('span');
-    span.className='cj-check-label';
-    span.textContent=c;
-    label.appendChild(cb);
-    label.appendChild(span);
+    span.className='cj-check-label';span.textContent=c;
+    label.appendChild(cb);label.appendChild(span);
     container.appendChild(label);
   });
 }
 
 function getSelectedCjs(){
-  return [...document.querySelectorAll('#uCjList input[type=checkbox]:checked')].map(i=>i.value);
+  return Array.from(document.querySelectorAll('#uCjList input[type=checkbox]:checked')).map(i=>i.value);
 }
 
-function openUserModal(id){
+window.openUserModal=function(id){
   editingUserId=id||null;
   if(id){
     const u=users.find(x=>x.id===id);
     document.getElementById('userModalTitle').textContent='Editar administrador';
     document.getElementById('uNombre').value=u.nombre;
-    document.getElementById('passOptLabel').textContent='(dejar vacío para no cambiar)';
+    document.getElementById('passOptLabel').textContent='(dejar vacio para no cambiar)';
     document.getElementById('uPass').value='';
-    document.getElementById('uPass').placeholder='Nueva contraseña (opcional)';
+    document.getElementById('uPass').placeholder='Nueva contrasena (opcional)';
     buildCjCheckList(u.conjuntos);
     document.getElementById('btnDelUser').style.display='block';
-  } else {
+  }else{
     document.getElementById('userModalTitle').textContent='Nuevo administrador';
     document.getElementById('uNombre').value='';
     document.getElementById('passOptLabel').textContent='';
     document.getElementById('uPass').value='';
-    document.getElementById('uPass').placeholder='Mínimo 4 caracteres';
+    document.getElementById('uPass').placeholder='Minimo 4 caracteres';
     buildCjCheckList([]);
     document.getElementById('btnDelUser').style.display='none';
   }
   document.getElementById('overlayUser').classList.add('open');
-}
+};
 
-function saveUser(){
+window.saveUser=async function(){
   const n=document.getElementById('uNombre').value.trim();
   const p=document.getElementById('uPass').value.trim();
   const cjs=getSelectedCjs();
-  if(!n){alert('Ingresa el nombre del administrador.');return;}
+  if(!n){alert('Ingresa el nombre.');return;}
   if(!cjs.length){alert('Selecciona al menos un conjunto.');return;}
   if(editingUserId){
     const u=users.find(x=>x.id===editingUserId);
-    u.nombre=n;
-    u.conjuntos=cjs;
-    if(p.length>=4)u.pass=p;
-    else if(p.length>0&&p.length<4){alert('La contraseña debe tener al menos 4 caracteres.');return;}
-  } else {
-    if(p.length<4){alert('La contraseña debe tener al menos 4 caracteres.');return;}
-    users.push({id:nextUserId++,nombre:n,pass:p,rol:'admin',conjuntos:cjs});
+    const updated={...u,nombre:n,conjuntos:cjs};
+    if(p.length>=4)updated.pass=p;
+    else if(p.length>0&&p.length<4){alert('La contrasena debe tener al menos 4 caracteres.');return;}
+    await saveUserDoc(updated);
+  }else{
+    if(p.length<4){alert('La contrasena debe tener al menos 4 caracteres.');return;}
+    await saveUserDoc({nombre:n,pass:p,rol:'admin',conjuntos:cjs});
   }
-  save(SK.users,users);
-  closeOverlay('overlayUser');renderConfig();buildLoginSelect();
-}
+  await loadUsers();
+  buildLoginSelect();
+  closeOverlay('overlayUser');
+  renderConfig();
+};
 
-function deleteUser(){
+window.deleteUser=async function(){
   if(!editingUserId)return;
   const u=users.find(x=>x.id===editingUserId);
   if(!u||u.rol==='director')return;
-  if(!confirm(`¿Eliminar administrador "${u.nombre}"?`))return;
-  users=users.filter(x=>x.id!==editingUserId);
-  save(SK.users,users);closeOverlay('overlayUser');renderConfig();buildLoginSelect();
-}
+  if(!confirm('Eliminar administrador "'+u.nombre+'"?'))return;
+  await deleteUserDoc(editingUserId);
+  await loadUsers();
+  buildLoginSelect();
+  closeOverlay('overlayUser');
+  renderConfig();
+};
 
-// ─── DASHBOARD ──────────────────────────────────────────────────────────────
+window.confirmDelUser=async function(id){
+  const u=users.find(x=>x.id===id);if(!u)return;
+  if(!confirm('Eliminar administrador "'+u.nombre+'"?'))return;
+  await deleteUserDoc(id);
+  await loadUsers();
+  buildLoginSelect();
+  renderConfig();
+};
+
+// ── DASHBOARD ────────────────────────────────────────────────────────────────
 function renderDash(){
   const fCj=document.getElementById('dashFilter').value;
   const cjs=fCj?[fCj]:conjuntos;
@@ -732,68 +815,69 @@ function renderDash(){
     const comp=ct.filter(t=>t.estado==='Completada').length;
     const resps=users.filter(u=>u.rol==='admin'&&u.conjuntos.includes(cj)).map(u=>u.nombre).join(', ')||'Sin asignar';
     const catB=categorias.map(c=>({cat:c,n:ct.filter(t=>t.categoria===c).length})).filter(x=>x.n>0);
-    const maxC=Math.max(...catB.map(x=>x.n),1);
-    return`<div class="dash-card">
-      <div class="dash-card-title">${cj}<span style="font-size:11px;color:var(--text3);">${ct.length} tareas</span></div>
-      <div class="dash-card-sub"><i class="ti ti-user" style="font-size:10px;"></i> ${resps}</div>
-      <div class="dash-mini">
-        <div class="mini-s"><div class="mini-val red">${venc}</div><div class="mini-label">Vencidas</div></div>
-        <div class="mini-s"><div class="mini-val" style="color:var(--warning);">${pend}</div><div class="mini-label">Pendientes</div></div>
-        <div class="mini-s"><div class="mini-val" style="color:var(--info);">${proc}</div><div class="mini-label">En proceso</div></div>
-        <div class="mini-s"><div class="mini-val green">${comp}</div><div class="mini-label">Completadas</div></div>
-      </div>
-      ${catB.map((x,i)=>`<div class="prog-row"><span class="prog-label">${x.cat}</span><div class="prog-bar-bg"><div class="prog-bar" style="width:${Math.round(x.n/maxC*100)}%;background:${colors[i%colors.length]};"></div></div><span class="prog-n">${x.n}</span></div>`).join('')}
-    </div>`;
+    const maxC=Math.max.apply(null,catB.map(x=>x.n).concat([1]));
+    return '<div class="dash-card">'+
+      '<div class="dash-card-title">'+cj+'<span style="font-size:11px;color:var(--text3);">'+ct.length+' tareas</span></div>'+
+      '<div class="dash-card-sub"><i class="ti ti-user" style="font-size:10px;"></i> '+resps+'</div>'+
+      '<div class="dash-mini">'+
+      '<div class="mini-s"><div class="mini-val red">'+venc+'</div><div class="mini-label">Vencidas</div></div>'+
+      '<div class="mini-s"><div class="mini-val" style="color:var(--warning);">'+pend+'</div><div class="mini-label">Pendientes</div></div>'+
+      '<div class="mini-s"><div class="mini-val" style="color:var(--info);">'+proc+'</div><div class="mini-label">En proceso</div></div>'+
+      '<div class="mini-s"><div class="mini-val green">'+comp+'</div><div class="mini-label">Completadas</div></div>'+
+      '</div>'+
+      catB.map((x,i)=>'<div class="prog-row"><span class="prog-label">'+x.cat+'</span><div class="prog-bar-bg"><div class="prog-bar" style="width:'+Math.round(x.n/maxC*100)+'%;background:'+colors[i%colors.length]+';"></div></div><span class="prog-n">'+x.n+'</span></div>').join('')+
+      '</div>';
   }).join('');
 }
 
-// ─── CONFIG ─────────────────────────────────────────────────────────────────
+// ── CONFIG ───────────────────────────────────────────────────────────────────
 function renderConfig(){
-  document.getElementById('chipConjuntos').innerHTML=conjuntos.map((c,i)=>`
-    <div class="chip">${c}<button class="chip-del" onclick="delConjunto(${i})" aria-label="Eliminar">✕</button></div>`).join('');
-  document.getElementById('chipCategorias').innerHTML=categorias.map((c,i)=>`
-    <div class="chip">${c}<button class="chip-del" onclick="delCategoria(${i})" aria-label="Eliminar">✕</button></div>`).join('');
-  document.getElementById('userTableBody').innerHTML=users.map((u)=>`
-    <tr>
-      <td style="font-weight:500;">${u.nombre}</td>
-      <td><div class="cj-tags">${u.rol==='director'?'<span class="cj-tag" style="background:var(--info-bg);color:var(--info);">Todos</span>':u.conjuntos.map(c=>`<span class="cj-tag">${c}</span>`).join('')||'—'}</div></td>
-      <td><span class="u-role ${u.rol==='director'?'u-director':'u-admin'}">${u.rol==='director'?'Director':'Admin'}</span></td>
-      <td>${u.rol!=='director'?`<div class="action-btns">
-        <button class="btn-edit-sm" onclick="openUserModal(${u.id})"><i class="ti ti-pencil"></i> Editar</button>
-        <button class="btn-del-sm" onclick="confirmDelUser(${u.id})">✕</button>
-      </div>`:'—'}</td>
-    </tr>`).join('');
+  document.getElementById('chipConjuntos').innerHTML=conjuntos.map((c,i)=>'<div class="chip">'+c+'<button class="chip-del" onclick="delConjunto('+i+')" aria-label="Eliminar">&#x2715;</button></div>').join('');
+  document.getElementById('chipCategorias').innerHTML=categorias.map((c,i)=>'<div class="chip">'+c+'<button class="chip-del" onclick="delCategoria('+i+')" aria-label="Eliminar">&#x2715;</button></div>').join('');
+  document.getElementById('userTableBody').innerHTML=users.map(u=>
+    '<tr>'+
+    '<td style="font-weight:500;">'+u.nombre+'</td>'+
+    '<td><div class="cj-tags">'+(u.rol==='director'?'<span class="cj-tag" style="background:var(--info-bg);color:var(--info);">Todos</span>':u.conjuntos.map(c=>'<span class="cj-tag">'+c+'</span>').join('')||'—')+'</div></td>'+
+    '<td><span class="u-role '+(u.rol==='director'?'u-director':'u-admin')+'">'+(u.rol==='director'?'Director':'Admin')+'</span></td>'+
+    '<td>'+(u.rol!=='director'?'<div class="action-btns"><button class="btn-edit-sm" onclick="openUserModal(\''+u.id+'\')"><i class="ti ti-pencil"></i> Editar</button><button class="btn-del-sm" onclick="confirmDelUser(\''+u.id+'\')">&#x2715;</button></div>':'—')+'</td>'+
+    '</tr>'
+  ).join('');
 }
 
-function confirmDelUser(id){
-  const u=users.find(x=>x.id===id);if(!u)return;
-  if(!confirm(`¿Eliminar administrador "${u.nombre}"?`))return;
-  users=users.filter(x=>x.id!==id);
-  save(SK.users,users);renderConfig();buildLoginSelect();
-}
-
-function addConjunto(){
+window.addConjunto=async function(){
   const v=document.getElementById('newCj').value.trim();
   if(!v||conjuntos.includes(v))return;
-  conjuntos.push(v);document.getElementById('newCj').value='';
-  save(SK.cj,conjuntos);renderConfig();
-}
-function delConjunto(i){
-  if(!confirm(`¿Eliminar conjunto "${conjuntos[i]}"?`))return;
-  conjuntos.splice(i,1);save(SK.cj,conjuntos);renderConfig();
-}
-function addCategoria(){
+  conjuntos.push(v);
+  document.getElementById('newCj').value='';
+  await saveConfig();
+  renderConfig();
+  setupApp();
+};
+
+window.delConjunto=async function(i){
+  if(!confirm('Eliminar "'+conjuntos[i]+'"?'))return;
+  conjuntos.splice(i,1);
+  await saveConfig();
+  renderConfig();
+};
+
+window.addCategoria=async function(){
   const v=document.getElementById('newCat').value.trim();
   if(!v||categorias.includes(v))return;
-  categorias.push(v);document.getElementById('newCat').value='';
-  save(SK.cat,categorias);renderConfig();
-}
-function delCategoria(i){
-  if(!confirm(`¿Eliminar categoría "${categorias[i]}"?`))return;
-  categorias.splice(i,1);save(SK.cat,categorias);renderConfig();
-}
+  categorias.push(v);
+  document.getElementById('newCat').value='';
+  await saveConfig();
+  renderConfig();
+};
 
-// ─── NOTIFICATIONS ──────────────────────────────────────────────────────────
+window.delCategoria=async function(i){
+  if(!confirm('Eliminar "'+categorias[i]+'"?'))return;
+  categorias.splice(i,1);
+  await saveConfig();
+  renderConfig();
+};
+
+// ── NOTIFICATIONS ─────────────────────────────────────────────────────────────
 function renderNotif(){
   const vt=visibleTasks();
   const venc=vt.filter(t=>isVencida(t)||t.estado==='Vencida');
@@ -804,44 +888,46 @@ function renderNotif(){
   const dir=currentUser.rol==='director';
   const multi=!dir&&currentUser.conjuntos.length>1;
   let html='';
-  venc.forEach(t=>{html+=`<div class="notif-item"><span class="ndot red"></span><strong style="color:var(--danger)">Vencida:</strong> ${t.titulo}${(dir||multi)?' — '+t.conjunto:''}</div>`;});
-  hoy.forEach(t=>{html+=`<div class="notif-item"><span class="ndot amber"></span><strong style="color:var(--warning)">Vence hoy:</strong> ${t.titulo}</div>`;});
-  prox.forEach(t=>{html+=`<div class="notif-item"><span class="ndot amber"></span><strong style="color:var(--warning)">Vence en ${daysFrom(t.fecha)} día(s):</strong> ${t.titulo}</div>`;});
-  if(!html)html='<div class="notif-item" style="color:var(--success);">✓ Sin alertas activas</div>';
-  document.getElementById('notifDD').innerHTML=`<div class="notif-hdr">Alertas activas</div>${html}`;
+  venc.forEach(t=>{html+='<div class="notif-item"><span class="ndot red"></span><strong style="color:var(--danger)">Vencida:</strong> '+t.titulo+((dir||multi)?' — '+t.conjunto:'')+'</div>';});
+  hoy.forEach(t=>{html+='<div class="notif-item"><span class="ndot amber"></span><strong style="color:var(--warning)">Vence hoy:</strong> '+t.titulo+'</div>';});
+  prox.forEach(t=>{html+='<div class="notif-item"><span class="ndot amber"></span><strong style="color:var(--warning)">Vence en '+daysFrom(t.fecha)+' dia(s):</strong> '+t.titulo+'</div>';});
+  if(!html)html='<div class="notif-item" style="color:var(--success);">Sin alertas activas</div>';
+  document.getElementById('notifDD').innerHTML='<div class="notif-hdr">Alertas activas</div>'+html;
 }
-function toggleNotif(){document.getElementById('notifDD').classList.toggle('open');}
+
+window.toggleNotif=function(){document.getElementById('notifDD').classList.toggle('open');};
 document.addEventListener('click',function(e){
   const dd=document.getElementById('notifDD');
   if(dd&&dd.classList.contains('open')&&!dd.contains(e.target)&&!e.target.closest('.notif-wrap'))dd.classList.remove('open');
 });
 
-// ─── EXPORT ─────────────────────────────────────────────────────────────────
-function exportCSV(){
+// ── EXPORT ───────────────────────────────────────────────────────────────────
+window.exportCSV=function(){
   const f=getFiltered();
-  const header=['Título','Conjunto','Categoría','Estado','Fecha límite','Responsable'];
+  const header=['Titulo','Conjunto','Categoria','Estado','Fecha limite','Responsable'];
   const rows=f.map(t=>[t.titulo,t.conjunto,t.categoria,effEst(t),fmtDate(t.fecha),t.responsable]);
-  const csv=[header,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const csv=[header,...rows].map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
-  a.download=`gestionph_${todayStr()}.csv`;a.click();
-}
-function exportPDF(){
+  a.download='gestionph_'+todayStr()+'.csv';a.click();
+};
+
+window.exportPDF=function(){
   const f=getFiltered();
-  const rows=f.map(t=>`<tr><td>${t.titulo}</td><td>${t.conjunto}</td><td>${t.categoria}</td><td>${effEst(t)}</td><td>${fmtDate(t.fecha)}</td><td>${t.responsable}</td></tr>`).join('');
-  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe GestiónPH</title><style>body{font-family:Arial,sans-serif;font-size:12px;padding:24px;color:#111;}h1{font-size:16px;margin-bottom:4px;}p{color:#666;font-size:11px;margin-bottom:18px;}table{width:100%;border-collapse:collapse;}th{background:#f0f0f0;padding:7px 9px;text-align:left;font-size:11px;border:1px solid #ddd;}td{padding:6px 9px;border:1px solid #eee;}tr:nth-child(even){background:#fafafa;}</style></head><body><h1>Informe de pendientes — GestiónPH</h1><p>Generado el ${new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'})} · ${f.length} tareas · ${currentUser.nombre}</p><table><thead><tr><th>Título</th><th>Conjunto</th><th>Categoría</th><th>Estado</th><th>Fecha límite</th><th>Responsable</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+  const rows=f.map(t=>'<tr><td>'+t.titulo+'</td><td>'+t.conjunto+'</td><td>'+t.categoria+'</td><td>'+effEst(t)+'</td><td>'+fmtDate(t.fecha)+'</td><td>'+t.responsable+'</td></tr>').join('');
+  const html='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe GestionPH</title><style>body{font-family:Arial,sans-serif;font-size:12px;padding:24px;color:#111;}h1{font-size:16px;margin-bottom:4px;}p{color:#666;font-size:11px;margin-bottom:18px;}table{width:100%;border-collapse:collapse;}th{background:#f0f0f0;padding:7px 9px;text-align:left;font-size:11px;border:1px solid #ddd;}td{padding:6px 9px;border:1px solid #eee;}tr:nth-child(even){background:#fafafa;}</style></head><body><h1>Informe de pendientes - GestionPH</h1><p>Generado el '+new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'})+' - '+f.length+' tareas - '+currentUser.nombre+'</p><table><thead><tr><th>Titulo</th><th>Conjunto</th><th>Categoria</th><th>Estado</th><th>Fecha limite</th><th>Responsable</th></tr></thead><tbody>'+rows+'</tbody></table></body></html>';
   const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),400);}
-}
+};
 
-// ─── OVERLAYS ───────────────────────────────────────────────────────────────
-function closeOverlay(id){document.getElementById(id).classList.remove('open');}
-function closeIfOutside(e,id){if(e.target===document.getElementById(id))closeOverlay(id);}
+// ── OVERLAYS ─────────────────────────────────────────────────────────────────
+window.closeOverlay=function(id){document.getElementById(id).classList.remove('open');};
+window.closeIfOutside=function(e,id){if(e.target===document.getElementById(id))closeOverlay(id);};
 
-// ─── RENDER ALL ─────────────────────────────────────────────────────────────
+// ── RENDER ALL ───────────────────────────────────────────────────────────────
 function renderAll(){renderStats();renderTasks();renderNotif();}
 
-// ─── INIT ───────────────────────────────────────────────────────────────────
-buildLoginSelect();
+// ── START ────────────────────────────────────────────────────────────────────
+init();
 </script>
 </body>
 </html>
