@@ -82,6 +82,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .task-card:hover{border-color:var(--border2);box-shadow:0 2px 8px rgba(0,0,0,0.06);}
 .task-card.vencida{border-left:3px solid var(--danger);border-radius:0 var(--radius) var(--radius) 0;}
 .task-card.proxima{border-left:3px solid var(--warning);border-radius:0 var(--radius) var(--radius) 0;}
+.task-card.task-selected{border-color:#185FA5;background:var(--info-bg);}
 .task-title{font-size:13px;font-weight:500;margin-bottom:5px;}
 .task-meta{display:flex;flex-wrap:wrap;gap:4px;}
 .tag{font-size:11px;padding:2px 8px;border-radius:999px;}
@@ -247,6 +248,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
     <div class="export-row">
       <button class="exp-btn" onclick="exportCSV()"><i class="ti ti-table"></i> Exportar CSV</button>
       <button class="exp-btn" onclick="exportPDF()"><i class="ti ti-printer"></i> Imprimir / PDF</button>
+      <button class="exp-btn" id="btnToggleReportMode" onclick="toggleReportMode()"><i class="ti ti-checklist"></i> Seleccionar para informe</button>
+    </div>
+    <div id="reportBar" style="display:none;padding:8px 16px;background:var(--info-bg);border-bottom:1px solid var(--border);align-items:center;gap:10px;">
+      <span id="reportCount" style="font-size:12px;color:var(--info);font-weight:500;">0 tareas seleccionadas</span>
+      <button class="exp-btn" style="margin-left:auto;background:var(--surface);" onclick="selectAllVisible()">Seleccionar todas las visibles</button>
+      <button class="btn-primary" style="margin:0;background:var(--info);" onclick="generarInformeWord()"><i class="ti ti-file-word"></i> Generar informe Word</button>
     </div>
     <div class="task-list" id="taskList"></div>
   </div>
@@ -307,6 +314,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
       <div class="field"><label>Fecha límite</label><input type="date" id="fFecha"></div>
     </div>
     <div class="field"><label>Responsable</label><select id="fResp"></select></div>
+    <div class="field"><label>Observaciones <span style="color:var(--text3);font-weight:400;">(notas de gestión / cumplimiento)</span></label><textarea id="fObs" rows="3" placeholder="Detalles de cómo se resolvió o el estado actual..." style="width:100%;font-size:13px;padding:9px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;resize:vertical;"></textarea></div>
+    <div class="field">
+      <label>Fotos <span style="color:var(--text3);font-weight:400;">(hasta 4, ej: antes/después)</span></label>
+      <div id="fotosPreview" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;"></div>
+      <input type="file" id="fFotoInput" accept="image/*" multiple style="display:none;" onchange="handleFotoSelect(event)">
+      <button type="button" class="btn-add" id="btnAddFoto" onclick="document.getElementById('fFotoInput').click()" style="width:100%;justify-content:center;"><i class="ti ti-camera"></i> Agregar foto</button>
+      <div id="fotoUploadStatus" style="font-size:11px;color:var(--text3);margin-top:4px;display:none;"></div>
+    </div>
     <button class="btn-save" onclick="saveTask()">Guardar tarea</button>
     <button class="btn-danger" id="btnEliminar" style="display:none" onclick="deleteTask()">Eliminar tarea</button>
   </div>
@@ -484,7 +499,8 @@ async function saveTaskDoc(t){
   const id = t.id || 'task_'+Date.now();
   const data = {
     titulo:t.titulo, conjunto:t.conjunto, categoria:t.categoria,
-    estado:t.estado, fecha:t.fecha, responsable:t.responsable||''
+    estado:t.estado, fecha:t.fecha, responsable:t.responsable||'',
+    observaciones:t.observaciones||'', fotos:t.fotos||[]
   };
   await setDoc(doc(db, COL.tasks, id), data);
   return id;
@@ -495,7 +511,56 @@ async function updateTaskEstado(id, estado){
 }
 
 async function deleteTaskDoc(id){
+  // Fotos viven dentro del mismo documento (base64), se borran junto con la tarea
   await deleteDoc(doc(db, COL.tasks, id));
+}
+
+// ── PHOTO HANDLING (base64 guardado directo en Firestore, sin Storage) ──────
+// Limite de Firestore: 1MB por documento. Comprimimos fuerte para que
+// 4 fotos + el resto de campos de la tarea quepan con margen.
+function resizeImage(file, maxDim, quality){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        let w=img.width, h=img.height;
+        if(w>h){ if(w>maxDim){h=Math.round(h*maxDim/w);w=maxDim;} }
+        else{ if(h>maxDim){w=Math.round(w*maxDim/h);h=maxDim;} }
+        const canvas=document.createElement('canvas');
+        canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/jpeg',quality));
+      };
+      img.onerror=reject;
+      img.src=e.target.result;
+    };
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// Comprime progresivamente hasta que la imagen pese menos de maxKB
+async function compressUntilSize(file, maxKB){
+  let maxDim = 700;
+  let quality = 0.6;
+  let dataUrl = await resizeImage(file, maxDim, quality);
+  let sizeKB = (dataUrl.length * 0.75) / 1024; // aprox base64 -> bytes
+  let attempts = 0;
+  while(sizeKB > maxKB && attempts < 5){
+    quality = Math.max(0.3, quality - 0.15);
+    maxDim = Math.max(400, maxDim - 100);
+    dataUrl = await resizeImage(file, maxDim, quality);
+    sizeKB = (dataUrl.length * 0.75) / 1024;
+    attempts++;
+  }
+  return dataUrl;
+}
+
+async function uploadTaskPhoto(taskId, file){
+  // maxKB=150 deja margen para 4 fotos + campos de texto dentro de 1MB
+  const dataUrl = await compressUntilSize(file, 150);
+  return {url: dataUrl, path: 'inline_base64'};
 }
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
@@ -625,6 +690,43 @@ function getFiltered(){
   });
 }
 
+let reportMode = false;
+let selectedForReport = new Set();
+
+window.toggleReportMode=function(){
+  reportMode = !reportMode;
+  const bar = document.getElementById('reportBar');
+  const btn = document.getElementById('btnToggleReportMode');
+  if(reportMode){
+    bar.style.display='flex';
+    btn.style.background='var(--info-bg)';
+    btn.style.color='var(--info)';
+    btn.innerHTML='<i class="ti ti-x"></i> Cancelar selección';
+  }else{
+    bar.style.display='none';
+    btn.style.background='';
+    btn.style.color='';
+    btn.innerHTML='<i class="ti ti-checklist"></i> Seleccionar para informe';
+    selectedForReport.clear();
+  }
+  renderTasks();
+};
+
+window.toggleTaskSelect=function(e,id){
+  e.stopPropagation();
+  if(selectedForReport.has(id)) selectedForReport.delete(id);
+  else selectedForReport.add(id);
+  document.getElementById('reportCount').textContent = selectedForReport.size+' tarea'+(selectedForReport.size!==1?'s':'')+' seleccionada'+(selectedForReport.size!==1?'s':'');
+  renderTasks();
+};
+
+window.selectAllVisible=function(){
+  const f=getFiltered();
+  f.forEach(t=>selectedForReport.add(t.id));
+  document.getElementById('reportCount').textContent = selectedForReport.size+' tareas seleccionadas';
+  renderTasks();
+};
+
 window.renderTasks=function renderTasks(){
   const list=document.getElementById('taskList');
   const f=getFiltered();
@@ -633,9 +735,13 @@ window.renderTasks=function renderTasks(){
   const multi=!dir&&currentUser.conjuntos.length>1;
   list.innerHTML=f.map(t=>{
     const showCj=dir||multi;
-    return '<div class="task-card '+cardCls(t)+'" onclick="openTaskModal(\''+t.id+'\')">'+
+    const checked = selectedForReport.has(t.id);
+    const clickHandler = reportMode ? "toggleTaskSelect(event,'"+t.id+"')" : "openTaskModal('"+t.id+"')";
+    const hasExtras = (t.fotos&&t.fotos.length) || t.observaciones;
+    return '<div class="task-card '+cardCls(t)+(checked?' task-selected':'')+'" onclick="'+clickHandler+'">'+
+      (reportMode?'<div style="display:flex;align-items:center;"><input type="checkbox" '+(checked?'checked':'')+' style="width:18px;height:18px;margin-right:10px;accent-color:#185FA5;cursor:pointer;" onclick="toggleTaskSelect(event,\''+t.id+'\')"></div>':'')+
       '<div>'+
-      '<div class="task-title">'+t.titulo+'</div>'+
+      '<div class="task-title">'+t.titulo+(hasExtras?' <i class="ti ti-paperclip" style="font-size:11px;color:var(--text3);"></i>':'')+'</div>'+
       '<div class="task-meta">'+
       (showCj?'<span class="tag tag-cj"><i class="ti ti-building" style="font-size:10px;"></i> '+t.conjunto+'</span>':'')+
       '<span class="tag tag-cat">'+t.categoria+'</span>'+
@@ -643,7 +749,7 @@ window.renderTasks=function renderTasks(){
       '</div>'+
       '<div class="fecha '+fechaCls(t)+'"><i class="ti ti-calendar" style="font-size:11px;"></i> '+fechaLabel(t)+'</div>'+
       '</div>'+
-      '<div><button class="epill '+epCls(effEst(t))+'" onclick="cycleEstado(event,\''+t.id+'\')">'+effEst(t)+'</button></div>'+
+      (!reportMode?'<div><button class="epill '+epCls(effEst(t))+'" onclick="cycleEstado(event,\''+t.id+'\')">'+effEst(t)+'</button></div>':'')+
       '</div>';
   }).join('');
 }
@@ -658,8 +764,11 @@ window.cycleEstado=async function(e,id){
 };
 
 // ── TASK MODAL ───────────────────────────────────────────────────────────────
+let currentFotos = []; // {url, path} being edited in the modal
+
 window.openTaskModal=function(id){
   editingTaskId=id||null;
+  currentFotos = [];
   const dir=currentUser.rol==='director';
   const fCj=document.getElementById('fCj');
   const availCj=dir?conjuntos:currentUser.conjuntos;
@@ -674,6 +783,8 @@ window.openTaskModal=function(id){
     document.getElementById('fCat').value=t.categoria;
     document.getElementById('fEst').value=t.estado==='Vencida'?'Pendiente':t.estado;
     document.getElementById('fFecha').value=t.fecha;
+    document.getElementById('fObs').value=t.observaciones||'';
+    currentFotos = (t.fotos||[]).slice();
     updateRespList(t.responsable);
     document.getElementById('btnEliminar').style.display=dir?'block':'none';
   }else{
@@ -681,9 +792,11 @@ window.openTaskModal=function(id){
     document.getElementById('fTitulo').value='';
     document.getElementById('fFecha').value=todayStr();
     document.getElementById('fEst').value='Pendiente';
+    document.getElementById('fObs').value='';
     updateRespList();
     document.getElementById('btnEliminar').style.display='none';
   }
+  renderFotosPreview();
   document.getElementById('overlayTask').classList.add('open');
 };
 
@@ -695,6 +808,45 @@ window.updateRespList=function(sel){
   if(sel)fr.value=sel;
 };
 
+// ── PHOTO HANDLING IN MODAL ──────────────────────────────────────────────────
+function renderFotosPreview(){
+  const wrap = document.getElementById('fotosPreview');
+  wrap.innerHTML = currentFotos.map((f,i)=>
+    '<div style="position:relative;aspect-ratio:1;border-radius:6px;overflow:hidden;border:1px solid var(--border);">'+
+      '<img src="'+f.url+'" style="width:100%;height:100%;object-fit:cover;display:block;">'+
+      '<button type="button" onclick="removeFoto('+i+')" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#x2715;</button>'+
+    '</div>'
+  ).join('');
+  document.getElementById('btnAddFoto').style.display = currentFotos.length>=4 ? 'none' : 'flex';
+}
+
+window.removeFoto=function(i){
+  currentFotos.splice(i,1);
+  renderFotosPreview();
+};
+
+window.handleFotoSelect=async function(e){
+  const files = Array.from(e.target.files||[]);
+  const slotsLeft = 4 - currentFotos.length;
+  const toUpload = files.slice(0, slotsLeft);
+  if(!toUpload.length) return;
+  const status = document.getElementById('fotoUploadStatus');
+  status.style.display='block';
+  for(let i=0;i<toUpload.length;i++){
+    status.textContent = 'Procesando foto '+(i+1)+' de '+toUpload.length+'...';
+    try{
+      const result = await uploadTaskPhoto(null, toUpload[i]);
+      currentFotos.push(result);
+      renderFotosPreview();
+    }catch(err){
+      console.error('Error procesando foto', err);
+      status.textContent = 'Error al procesar una foto. Intenta de nuevo.';
+    }
+  }
+  status.style.display='none';
+  e.target.value='';
+};
+
 window.saveTask=async function(){
   const titulo=document.getElementById('fTitulo').value.trim();
   if(!titulo){document.getElementById('fTitulo').focus();return;}
@@ -704,7 +856,9 @@ window.saveTask=async function(){
     categoria:document.getElementById('fCat').value,
     estado:document.getElementById('fEst').value,
     fecha:document.getElementById('fFecha').value,
-    responsable:document.getElementById('fResp').value||''
+    responsable:document.getElementById('fResp').value||'',
+    observaciones:document.getElementById('fObs').value.trim(),
+    fotos: currentFotos
   };
   if(editingTaskId){data.id=editingTaskId;}
   await saveTaskDoc(data);
@@ -715,6 +869,7 @@ window.deleteTask=async function(){
   if(!editingTaskId)return;
   if(!confirm('Eliminar esta tarea?'))return;
   await deleteTaskDoc(editingTaskId);
+
   closeOverlay('overlayTask');
 };
 
@@ -962,6 +1117,94 @@ window.exportPDF=function(){
   const rows=f.map(t=>'<tr><td>'+t.titulo+'</td><td>'+t.conjunto+'</td><td>'+t.categoria+'</td><td>'+effEst(t)+'</td><td>'+fmtDate(t.fecha)+'</td><td>'+t.responsable+'</td></tr>').join('');
   const html='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe GestionPH</title><style>body{font-family:Arial,sans-serif;font-size:12px;padding:24px;color:#111;}h1{font-size:16px;margin-bottom:4px;}p{color:#666;font-size:11px;margin-bottom:18px;}table{width:100%;border-collapse:collapse;}th{background:#f0f0f0;padding:7px 9px;text-align:left;font-size:11px;border:1px solid #ddd;}td{padding:6px 9px;border:1px solid #eee;}tr:nth-child(even){background:#fafafa;}</style></head><body><h1>Informe de pendientes - GestionPH</h1><p>Generado el '+new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'})+' - '+f.length+' tareas - '+currentUser.nombre+'</p><table><thead><tr><th>Titulo</th><th>Conjunto</th><th>Categoria</th><th>Estado</th><th>Fecha limite</th><th>Responsable</th></tr></thead><tbody>'+rows+'</tbody></table></body></html>';
   const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),400);}
+};
+
+// ── INFORME WORD (.doc) CON FOTOS ────────────────────────────────────────────
+// Las fotos ya vienen como dataURL base64 (guardadas directo en Firestore),
+// asi que no es necesario convertirlas - se usan tal cual.
+
+window.generarInformeWord=async function(){
+  if(!selectedForReport.size){
+    alert('Selecciona al menos una tarea para incluir en el informe.');
+    return;
+  }
+  const btn = document.querySelector('[onclick="generarInformeWord()"]');
+  const origText = btn.innerHTML;
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Generando...';
+  btn.disabled = true;
+
+  const seleccionadas = tasks.filter(t=>selectedForReport.has(t.id))
+    .sort((a,b)=> a.conjunto.localeCompare(b.conjunto) || new Date(a.fecha)-new Date(b.fecha));
+
+  // Las fotos ya son base64 (t.fotos[i].url), se usan directo
+  seleccionadas.forEach(t=>{
+    t._fotosBase64 = (t.fotos||[]).map(f=>f.url);
+  });
+
+  const conjuntosEnInforme = [...new Set(seleccionadas.map(t=>t.conjunto))];
+  const porCategoria = {};
+  seleccionadas.forEach(t=>{ porCategoria[t.categoria] = (porCategoria[t.categoria]||0)+1; });
+
+  const fechaInforme = new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
+
+  const filasResumen = Object.entries(porCategoria).map(([cat,n])=>
+    '<tr><td style="padding:6px 10px;border:1px solid #ddd;">'+cat+'</td><td style="padding:6px 10px;border:1px solid #ddd;text-align:center;">'+n+'</td></tr>'
+  ).join('');
+
+  const bloquesTareas = seleccionadas.map((t,idx)=>{
+    const fotosHtml = (t._fotosBase64&&t._fotosBase64.length)
+      ? '<table style="width:100%;margin-top:8px;"><tr>'+
+          t._fotosBase64.map(b64=>'<td style="width:'+(100/Math.min(t._fotosBase64.length,2))+'%;padding:4px;text-align:center;"><img src="'+b64+'" style="max-width:100%;max-height:220px;border:1px solid #ccc;border-radius:4px;"/></td>').slice(0,2).join('')+
+        '</tr>'+
+        (t._fotosBase64.length>2 ? '<tr>'+t._fotosBase64.slice(2,4).map(b64=>'<td style="width:50%;padding:4px;text-align:center;"><img src="'+b64+'" style="max-width:100%;max-height:220px;border:1px solid #ccc;border-radius:4px;"/></td>').join('')+'</tr>' : '')+
+        '</table>'
+      : '';
+
+    return '<div style="margin-bottom:20px;padding-bottom:16px;'+(idx<seleccionadas.length-1?'border-bottom:1px solid #e0e0e0;':'')+'">'+
+      '<p style="font-size:13px;font-weight:bold;color:#111;margin:0 0 4px;">'+(idx+1)+'. '+t.titulo+'</p>'+
+      '<p style="font-size:11px;color:#666;margin:0 0 8px;">'+t.conjunto+' &nbsp;|&nbsp; '+t.categoria+' &nbsp;|&nbsp; Responsable: '+t.responsable+' &nbsp;|&nbsp; Fecha: '+fmtDate(t.fecha)+'</p>'+
+      (t.observaciones ? '<p style="font-size:12px;color:#333;background:#f7f7f5;padding:8px 10px;border-radius:4px;margin:0 0 6px;"><b>Observaciones:</b> '+t.observaciones+'</p>' : '')+
+      fotosHtml+
+    '</div>';
+  }).join('');
+
+  const html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'+
+    '<title>Informe de Gestion - GestionPH</title>'+
+    '<style>'+
+      'body{font-family:Calibri,Arial,sans-serif;color:#111;margin:0;padding:0;}'+
+      '.header{background:#185FA5;color:#fff;padding:28px 36px;}'+
+      '.header h1{margin:0;font-size:22px;font-weight:600;}'+
+      '.header p{margin:4px 0 0;font-size:12px;opacity:0.9;}'+
+      '.content{padding:24px 36px;}'+
+      '.section-title{font-size:14px;font-weight:bold;color:#185FA5;border-bottom:2px solid #185FA5;padding-bottom:4px;margin:20px 0 12px;}'+
+      'table.resumen{width:100%;border-collapse:collapse;margin-bottom:10px;}'+
+      'table.resumen th{background:#185FA5;color:#fff;padding:7px 10px;text-align:left;font-size:12px;}'+
+      'table.resumen td{font-size:12px;}'+
+      '.footer{padding:14px 36px;font-size:10px;color:#999;border-top:1px solid #eee;margin-top:20px;}'+
+    '</style></head><body>'+
+    '<div class="header">'+
+      '<h1>Informe de Gestion — GestionPH</h1>'+
+      '<p>Conjunto(s): '+conjuntosEnInforme.join(', ')+'</p>'+
+      '<p>Generado el '+fechaInforme+' por '+currentUser.nombre+'</p>'+
+    '</div>'+
+    '<div class="content">'+
+      '<p class="section-title">Resumen ejecutivo</p>'+
+      '<table class="resumen"><thead><tr><th>Categoria</th><th style="text-align:center;">Cantidad</th></tr></thead><tbody>'+filasResumen+'</tbody></table>'+
+      '<p style="font-size:12px;color:#333;">Total de tareas reportadas: <b>'+seleccionadas.length+'</b></p>'+
+      '<p class="section-title">Detalle de tareas</p>'+
+      bloquesTareas+
+    '</div>'+
+    '<div class="footer">Documento generado automaticamente por GestionPH — Sistema de gestion de pendientes para conjuntos residenciales.</div>'+
+    '</body></html>';
+
+  const blob = new Blob(['\ufeff', html], {type:'application/msword'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Informe_Gestion_'+todayStr()+'.doc';
+  a.click();
+
+  btn.innerHTML = origText;
+  btn.disabled = false;
 };
 
 // ── OVERLAYS ─────────────────────────────────────────────────────────────────
