@@ -296,6 +296,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
         </table>
         <button class="btn-add" onclick="openUserModal()"><i class="ti ti-plus"></i> Nuevo administrador</button>
       </div>
+      <div class="cfg-card">
+        <div class="cfg-title"><i class="ti ti-mail"></i> Alertas por correo</div>
+        <div class="info-box"><i class="ti ti-info-circle" style="flex-shrink:0;font-size:16px;margin-top:1px;"></i><span>Las alertas se envian automaticamente al abrir la app (tareas que vencen hoy o en 3 dias). Usa este boton si agregaste correos nuevos y quieres forzar el reenvio sin esperar.</span></div>
+        <button class="btn-add" style="width:100%;justify-content:center;" onclick="forzarReenvioAlertas()"><i class="ti ti-send"></i> Reenviar alertas ahora</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1254,54 +1259,61 @@ async function sendAlertEmail(toEmail, toName, task, diasRestantes){
   }
 }
 
-// Check tasks and send alerts - runs once per day per session
-async function checkAndSendAlerts(){
-  const alertKey = 'gph_alerts_sent_'+todayStr();
-  if(localStorage.getItem(alertKey)) return; // already sent today
+// Check tasks and send alerts - control granular por tarea+destinatario+dia
+// (asi un correo nuevo agregado despues no queda bloqueado por un envio previo)
+function getAlertLog(){
+  try{ return JSON.parse(localStorage.getItem('gph_alert_log')||'{}'); }catch(e){ return {}; }
+}
+function saveAlertLog(log){
+  try{ localStorage.setItem('gph_alert_log', JSON.stringify(log)); }catch(e){}
+}
 
-  // Get director email from users
+async function checkAndSendAlerts(){
+  const log = getAlertLog();
+  const today = todayStr();
+
   const director = users.find(u=>u.rol==='director');
 
-  const alertDays = [0, 3]; // same day and 3 days before
+  const alertDays = [0, 3]; // mismo dia y 3 dias antes
   const tasksToAlert = tasks.filter(t=>{
     if(t.estado==='Completada') return false;
     const d = daysFrom(t.fecha);
     return alertDays.includes(d);
   });
 
-  if(!tasksToAlert.length){
-    localStorage.setItem(alertKey, '1');
-    return;
-  }
-
   for(const task of tasksToAlert){
     const dias = daysFrom(task.fecha);
     const sentTo = new Set();
 
-    // Send to director if has email
-    if(director&&director.email){
-      await sendAlertEmail(director.email, 'Director Operativo', task, dias);
-      sentTo.add(director.email);
-    }
+    const recipients = [];
+    if(director&&director.email) recipients.push({email:director.email, nombre:'Director Operativo'});
 
-    // Send to responsible admin if has email
     const adminUser = users.find(u=>u.nombre===task.responsable&&u.rol==='admin');
-    if(adminUser&&adminUser.email&&!sentTo.has(adminUser.email)){
-      await sendAlertEmail(adminUser.email, adminUser.nombre, task, dias);
-      sentTo.add(adminUser.email);
-    }
+    if(adminUser&&adminUser.email) recipients.push({email:adminUser.email, nombre:adminUser.nombre});
 
-    // Send to conjunto email if configured and not already sent
     const cjEmail = conjuntosEmails[task.conjunto];
-    if(cjEmail&&!sentTo.has(cjEmail)){
-      await sendAlertEmail(cjEmail, task.conjunto, task, dias);
-      sentTo.add(cjEmail);
+    if(cjEmail) recipients.push({email:cjEmail, nombre:task.conjunto});
+
+    for(const r of recipients){
+      if(sentTo.has(r.email)) continue; // evita duplicado al mismo correo en esta tarea
+      const logKey = task.id+'|'+r.email+'|'+today;
+      if(log[logKey]) continue; // ya se envio este correo especifico hoy
+      await sendAlertEmail(r.email, r.nombre, task, dias);
+      sentTo.add(r.email);
+      log[logKey] = true;
     }
   }
 
-  localStorage.setItem(alertKey, '1');
-  console.log('Revision de alertas completada para '+todayStr());
+  saveAlertLog(log);
+  console.log('Revision de alertas completada para '+today);
 }
+
+// Permite forzar el reenvio manual (ignora el registro de "ya enviado")
+window.forzarReenvioAlertas=async function(){
+  localStorage.removeItem('gph_alert_log');
+  await checkAndSendAlerts();
+  alert('Alertas reenviadas. Revisa EmailJS > Email Logs para confirmar el envio.');
+};
 
 
 // ── MODIFIED INIT WITH ALERTS ─────────────────────────────────────────────────
