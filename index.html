@@ -61,6 +61,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .view{display:none;}
 .view.active{display:block;}
 .filters-bar{display:flex;gap:7px;padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center;}
+.multiselect-wrap{position:relative;display:inline-block;}
+.multiselect-btn{font-size:13px;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;display:flex;align-items:center;white-space:nowrap;gap:2px;}
+.multiselect-btn:hover{background:var(--surface2);}
+.multiselect-btn.active{border-color:#185FA5;color:#185FA5;background:var(--info-bg);}
+.multiselect-dropdown{display:none;position:absolute;top:calc(100% + 4px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 4px;z-index:40;min-width:160px;box-shadow:var(--shadow);}
+.multiselect-dropdown.open{display:block;}
+.ms-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;cursor:pointer;font-size:13px;color:var(--text);white-space:nowrap;}
+.ms-item:hover{background:var(--surface2);}
+.ms-item input[type=checkbox]{accent-color:#185FA5;width:14px;height:14px;cursor:pointer;flex-shrink:0;}
 .filters-bar select,.filters-bar input[type=text]{font-size:13px;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);}
 .search-wrap{position:relative;display:flex;align-items:center;}
 .search-wrap i{position:absolute;left:8px;color:var(--text3);font-size:14px;pointer-events:none;}
@@ -241,14 +250,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
       <div class="search-wrap"><i class="ti ti-search"></i><input type="text" id="filtBuscar" placeholder="Buscar..." oninput="renderTasks()"></div>
       <select id="filtCj" onchange="renderTasks()"></select>
       <select id="filtCat" onchange="renderTasks()"><option value="">Todas las categorías</option></select>
-      <select id="filtEst" onchange="renderTasks()">
-        <option value="">Todos los estados</option>
-        <option>Pendiente</option><option>En proceso</option><option>Completada</option><option>Vencida</option>
-      </select>
-      <select id="filtPrioridad" onchange="renderTasks()">
-        <option value="">Todas las prioridades</option>
-        <option>Alta</option><option>Media</option><option>Baja</option>
-      </select>
+
+      <!-- Multi-select Estado -->
+      <div class="multiselect-wrap" id="wrapEst">
+        <button class="multiselect-btn" onclick="toggleMultiSelect('wrapEst')" id="btnEst">
+          <span id="lblEst">Todos los estados</span><i class="ti ti-chevron-down" style="font-size:12px;margin-left:4px;"></i>
+        </button>
+        <div class="multiselect-dropdown" id="dropEst">
+          <label class="ms-item"><input type="checkbox" value="Pendiente" onchange="updateMultiLabel('Est');renderTasks()"> Pendiente</label>
+          <label class="ms-item"><input type="checkbox" value="En proceso" onchange="updateMultiLabel('Est');renderTasks()"> En proceso</label>
+          <label class="ms-item"><input type="checkbox" value="Completada" onchange="updateMultiLabel('Est');renderTasks()"> Completada</label>
+          <label class="ms-item"><input type="checkbox" value="Vencida" onchange="updateMultiLabel('Est');renderTasks()"> Vencida</label>
+        </div>
+      </div>
+
+      <!-- Multi-select Prioridad -->
+      <div class="multiselect-wrap" id="wrapPrio">
+        <button class="multiselect-btn" onclick="toggleMultiSelect('wrapPrio')" id="btnPrio">
+          <span id="lblPrio">Todas las prioridades</span><i class="ti ti-chevron-down" style="font-size:12px;margin-left:4px;"></i>
+        </button>
+        <div class="multiselect-dropdown" id="dropPrio">
+          <label class="ms-item"><input type="checkbox" value="Alta" onchange="updateMultiLabel('Prio');renderTasks()"> <span class="prio-Alta">↑ Alta</span></label>
+          <label class="ms-item"><input type="checkbox" value="Media" onchange="updateMultiLabel('Prio');renderTasks()"> <span class="prio-Media">Media</span></label>
+          <label class="ms-item"><input type="checkbox" value="Baja" onchange="updateMultiLabel('Prio');renderTasks()"> <span class="prio-Baja">Baja</span></label>
+        </div>
+      </div>
+
       <button class="btn-primary" onclick="openTaskModal()"><i class="ti ti-plus"></i> Nueva tarea</button>
     </div>
     <div class="filters-bar" style="padding:7px 16px;gap:10px;align-items:center;">
@@ -707,8 +734,8 @@ function renderStats(){
 function getFiltered(){
   const cj=document.getElementById('filtCj').value;
   const cat=document.getElementById('filtCat').value;
-  const est=document.getElementById('filtEst').value;
-  const prio=document.getElementById('filtPrioridad').value;
+  const estSelec = getCheckedValues('dropEst');
+  const prioSelec = getCheckedValues('dropPrio');
   const q=(document.getElementById('filtBuscar').value||'').toLowerCase();
   const regDesde=document.getElementById('filtFechaRegDesde').value;
   const regHasta=document.getElementById('filtFechaRegHasta').value;
@@ -719,8 +746,8 @@ function getFiltered(){
     const ev=effEst(t);
     if(cj&&t.conjunto!==cj) return false;
     if(cat&&t.categoria!==cat) return false;
-    if(est&&ev!==est) return false;
-    if(prio&&(t.prioridad||'Media')!==prio) return false;
+    if(estSelec.length&&!estSelec.includes(ev)) return false;
+    if(prioSelec.length&&!prioSelec.includes(t.prioridad||'Media')) return false;
     if(q&&!t.titulo.toLowerCase().includes(q)&&!t.conjunto.toLowerCase().includes(q)) return false;
     // Filtro fecha de registro
     const fr = t.fechaRegistro||'';
@@ -740,6 +767,39 @@ function getFiltered(){
     return new Date(a.fecha)-new Date(b.fecha);
   });
 }
+
+// ── MULTI-SELECT HELPERS ─────────────────────────────────────────────────────
+function getCheckedValues(dropId){
+  return Array.from(document.querySelectorAll('#'+dropId+' input[type=checkbox]:checked')).map(i=>i.value);
+}
+
+window.toggleMultiSelect=function(wrapId){
+  const drop = document.getElementById('drop'+wrapId.replace('wrap',''));
+  const allDrops = document.querySelectorAll('.multiselect-dropdown');
+  allDrops.forEach(d=>{ if(d!==drop) d.classList.remove('open'); });
+  drop.classList.toggle('open');
+};
+
+window.updateMultiLabel=function(key){
+  const vals = getCheckedValues('drop'+key);
+  const lbl = document.getElementById('lbl'+key);
+  const btn = document.getElementById('btn'+key);
+  const defaults = {Est:'Todos los estados', Prio:'Todas las prioridades'};
+  if(!vals.length){
+    lbl.textContent = defaults[key];
+    btn.classList.remove('active');
+  } else {
+    lbl.textContent = vals.join(', ');
+    btn.classList.add('active');
+  }
+};
+
+// Cerrar dropdowns al hacer clic fuera
+document.addEventListener('click', function(e){
+  if(!e.target.closest('.multiselect-wrap')){
+    document.querySelectorAll('.multiselect-dropdown').forEach(d=>d.classList.remove('open'));
+  }
+});
 
 window.limpiarFiltrosFecha=function(){
   document.getElementById('filtFechaRegDesde').value='';
