@@ -98,6 +98,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .ep-En-proceso{background:var(--info-bg);color:var(--info);}
 .ep-Completada{background:var(--success-bg);color:var(--success);}
 .ep-Vencida{background:var(--danger-bg);color:var(--danger);}
+.prio-Alta{background:#fdecea;color:#c0392b;font-size:10px;padding:2px 7px;border-radius:999px;font-weight:600;border:1px solid #fca5a5;}
+.prio-Media{background:#fff3e0;color:#b06a00;font-size:10px;padding:2px 7px;border-radius:999px;font-weight:600;border:1px solid #fcd34d;}
+.prio-Baja{background:#e8f7ee;color:#1a8a5a;font-size:10px;padding:2px 7px;border-radius:999px;font-weight:600;border:1px solid #6ee7b7;}
 .empty-state{text-align:center;color:var(--text3);font-size:13px;padding:48px 0;}
 .empty-state i{font-size:32px;display:block;margin-bottom:10px;opacity:.4;}
 .dash-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 4px;}
@@ -242,7 +245,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
         <option value="">Todos los estados</option>
         <option>Pendiente</option><option>En proceso</option><option>Completada</option><option>Vencida</option>
       </select>
+      <select id="filtPrioridad" onchange="renderTasks()">
+        <option value="">Todas las prioridades</option>
+        <option>Alta</option><option>Media</option><option>Baja</option>
+      </select>
       <button class="btn-primary" onclick="openTaskModal()"><i class="ti ti-plus"></i> Nueva tarea</button>
+    </div>
+    <div class="filters-bar" style="padding:7px 16px;gap:10px;align-items:center;">
+      <span style="font-size:12px;color:var(--text2);white-space:nowrap;"><i class="ti ti-calendar" style="font-size:13px;"></i> Registro:</span>
+      <input type="date" id="filtFechaRegDesde" onchange="renderTasks()" style="font-size:12px;padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);">
+      <span style="font-size:12px;color:var(--text3);">hasta</span>
+      <input type="date" id="filtFechaRegHasta" onchange="renderTasks()" style="font-size:12px;padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);">
+      <span style="font-size:12px;color:var(--text2);margin-left:8px;white-space:nowrap;"><i class="ti ti-calendar-due" style="font-size:13px;"></i> Vencimiento:</span>
+      <input type="date" id="filtFechaFinDesde" onchange="renderTasks()" style="font-size:12px;padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);">
+      <span style="font-size:12px;color:var(--text3);">hasta</span>
+      <input type="date" id="filtFechaFinHasta" onchange="renderTasks()" style="font-size:12px;padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);">
+      <button class="btn-add" onclick="limpiarFiltrosFecha()" style="white-space:nowrap;"><i class="ti ti-x"></i> Limpiar</button>
     </div>
     <div class="stats-row" id="statsRow"></div>
     <div class="export-row">
@@ -316,7 +334,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
     </div>
     <div class="field-row">
       <div class="field"><label>Estado</label><select id="fEst"><option>Pendiente</option><option>En proceso</option><option>Completada</option></select></div>
+      <div class="field"><label>Prioridad</label><select id="fPrioridad"><option>Media</option><option>Alta</option><option>Baja</option></select></div>
+    </div>
+    <div class="field-row">
       <div class="field"><label>Fecha límite</label><input type="date" id="fFecha"></div>
+      <div class="field"><label>Fecha de registro</label><input type="date" id="fFechaReg"></div>
     </div>
     <div class="field"><label>Responsable</label><select id="fResp"></select></div>
     <div class="field"><label>Observaciones <span style="color:var(--text3);font-weight:400;">(notas de gestión / cumplimiento)</span></label><textarea id="fObs" rows="3" placeholder="Detalles de cómo se resolvió o el estado actual..." style="width:100%;font-size:13px;padding:9px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;resize:vertical;"></textarea></div>
@@ -505,7 +527,9 @@ async function saveTaskDoc(t){
   const data = {
     titulo:t.titulo, conjunto:t.conjunto, categoria:t.categoria,
     estado:t.estado, fecha:t.fecha, responsable:t.responsable||'',
-    observaciones:t.observaciones||'', fotos:t.fotos||[]
+    observaciones:t.observaciones||'', fotos:t.fotos||[],
+    prioridad:t.prioridad||'Media',
+    fechaRegistro:t.fechaRegistro||todayStr()
   };
   await setDoc(doc(db, COL.tasks, id), data);
   return id;
@@ -684,16 +708,46 @@ function getFiltered(){
   const cj=document.getElementById('filtCj').value;
   const cat=document.getElementById('filtCat').value;
   const est=document.getElementById('filtEst').value;
+  const prio=document.getElementById('filtPrioridad').value;
   const q=(document.getElementById('filtBuscar').value||'').toLowerCase();
+  const regDesde=document.getElementById('filtFechaRegDesde').value;
+  const regHasta=document.getElementById('filtFechaRegHasta').value;
+  const finDesde=document.getElementById('filtFechaFinDesde').value;
+  const finHasta=document.getElementById('filtFechaFinHasta').value;
+
   return visibleTasks().filter(t=>{
     const ev=effEst(t);
-    return(!cj||t.conjunto===cj)&&(!cat||t.categoria===cat)&&(!est||ev===est)&&(!q||t.titulo.toLowerCase().includes(q)||t.conjunto.toLowerCase().includes(q));
+    if(cj&&t.conjunto!==cj) return false;
+    if(cat&&t.categoria!==cat) return false;
+    if(est&&ev!==est) return false;
+    if(prio&&(t.prioridad||'Media')!==prio) return false;
+    if(q&&!t.titulo.toLowerCase().includes(q)&&!t.conjunto.toLowerCase().includes(q)) return false;
+    // Filtro fecha de registro
+    const fr = t.fechaRegistro||'';
+    if(regDesde&&fr&&fr<regDesde) return false;
+    if(regHasta&&fr&&fr>regHasta) return false;
+    // Filtro fecha de vencimiento
+    if(finDesde&&t.fecha<finDesde) return false;
+    if(finHasta&&t.fecha>finHasta) return false;
+    return true;
   }).sort((a,b)=>{
+    // Ordenar por prioridad primero, luego estado, luego fecha
+    const pOrd={Alta:0,Media:1,Baja:2};
+    const pa=pOrd[a.prioridad||'Media'], pb=pOrd[b.prioridad||'Media'];
+    if(pa!==pb) return pa-pb;
     const o={Vencida:0,Pendiente:1,'En proceso':2,Completada:3};
     if(o[effEst(a)]!==o[effEst(b)])return o[effEst(a)]-o[effEst(b)];
     return new Date(a.fecha)-new Date(b.fecha);
   });
 }
+
+window.limpiarFiltrosFecha=function(){
+  document.getElementById('filtFechaRegDesde').value='';
+  document.getElementById('filtFechaRegHasta').value='';
+  document.getElementById('filtFechaFinDesde').value='';
+  document.getElementById('filtFechaFinHasta').value='';
+  renderTasks();
+};
 
 let reportMode = false;
 let selectedForReport = new Set();
@@ -749,6 +803,7 @@ window.renderTasks=function renderTasks(){
       '<div class="task-title">'+t.titulo+(hasExtras?' <i class="ti ti-paperclip" style="font-size:11px;color:var(--text3);"></i>':'')+'</div>'+
       '<div class="task-meta">'+
       (showCj?'<span class="tag tag-cj"><i class="ti ti-building" style="font-size:10px;"></i> '+t.conjunto+'</span>':'')+
+      '<span class="prio-'+(t.prioridad||'Media')+'">'+((t.prioridad||'Media')==='Alta'?'↑ ':'')+(t.prioridad||'Media')+'</span>'+
       '<span class="tag tag-cat">'+t.categoria+'</span>'+
       '<span class="tag tag-resp"><i class="ti ti-user" style="font-size:10px;"></i> '+t.responsable+'</span>'+
       '</div>'+
@@ -787,7 +842,9 @@ window.openTaskModal=function(id){
     fCj.value=t.conjunto;
     document.getElementById('fCat').value=t.categoria;
     document.getElementById('fEst').value=t.estado==='Vencida'?'Pendiente':t.estado;
+    document.getElementById('fPrioridad').value=t.prioridad||'Media';
     document.getElementById('fFecha').value=t.fecha;
+    document.getElementById('fFechaReg').value=t.fechaRegistro||todayStr();
     document.getElementById('fObs').value=t.observaciones||'';
     currentFotos = (t.fotos||[]).slice();
     updateRespList(t.responsable);
@@ -796,6 +853,8 @@ window.openTaskModal=function(id){
     document.getElementById('taskModalTitle').textContent='Nueva tarea';
     document.getElementById('fTitulo').value='';
     document.getElementById('fFecha').value=todayStr();
+    document.getElementById('fFechaReg').value=todayStr();
+    document.getElementById('fPrioridad').value='Media';
     document.getElementById('fEst').value='Pendiente';
     document.getElementById('fObs').value='';
     updateRespList();
@@ -861,9 +920,11 @@ window.saveTask=async function(){
     categoria:document.getElementById('fCat').value,
     estado:document.getElementById('fEst').value,
     fecha:document.getElementById('fFecha').value,
-    responsable:document.getElementById('fResp').value||'',
+    fechaRegistro:document.getElementById('fFechaReg').value||todayStr(),
+    prioridad:document.getElementById('fPrioridad').value||'Media',
     observaciones:document.getElementById('fObs').value.trim(),
-    fotos: currentFotos
+    fotos: currentFotos,
+    responsable:document.getElementById('fResp').value||''
   };
   if(editingTaskId){data.id=editingTaskId;}
   await saveTaskDoc(data);
@@ -1109,8 +1170,8 @@ document.addEventListener('click',function(e){
 // ── EXPORT ───────────────────────────────────────────────────────────────────
 window.exportCSV=function(){
   const f=getFiltered();
-  const header=['Titulo','Conjunto','Categoria','Estado','Fecha limite','Responsable'];
-  const rows=f.map(t=>[t.titulo,t.conjunto,t.categoria,effEst(t),fmtDate(t.fecha),t.responsable]);
+  const header=['Titulo','Conjunto','Categoria','Prioridad','Estado','Fecha Registro','Fecha limite','Responsable','Observaciones'];
+  const rows=f.map(t=>[t.titulo,t.conjunto,t.categoria,t.prioridad||'Media',effEst(t),t.fechaRegistro?fmtDate(t.fechaRegistro):'',fmtDate(t.fecha),t.responsable,t.observaciones||'']);
   const csv=[header,...rows].map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
@@ -1167,7 +1228,7 @@ window.generarInformeWord=async function(){
 
     return '<div style="margin-bottom:20px;padding-bottom:16px;'+(idx<seleccionadas.length-1?'border-bottom:1px solid #e0e0e0;':'')+'">'+
       '<p style="font-size:13px;font-weight:bold;color:#111;margin:0 0 4px;">'+(idx+1)+'. '+t.titulo+'</p>'+
-      '<p style="font-size:11px;color:#666;margin:0 0 8px;">'+t.conjunto+' &nbsp;|&nbsp; '+t.categoria+' &nbsp;|&nbsp; Responsable: '+t.responsable+' &nbsp;|&nbsp; Fecha: '+fmtDate(t.fecha)+'</p>'+
+      '<p style="font-size:11px;color:#666;margin:0 0 8px;">'+t.conjunto+' &nbsp;|&nbsp; '+t.categoria+' &nbsp;|&nbsp; Prioridad: '+(t.prioridad||'Media')+' &nbsp;|&nbsp; Responsable: '+t.responsable+' &nbsp;|&nbsp; Registro: '+(t.fechaRegistro?fmtDate(t.fechaRegistro):'-')+' &nbsp;|&nbsp; Vencimiento: '+fmtDate(t.fecha)+'</p>'+
       (t.observaciones ? '<p style="font-size:12px;color:#333;background:#f7f7f5;padding:8px 10px;border-radius:4px;margin:0 0 6px;"><b>Observaciones:</b> '+t.observaciones+'</p>' : '')+
       fotosHtml+
     '</div>';
