@@ -432,7 +432,7 @@ const COL = {
 // ── STATE ───────────────────────────────────────────────────────────────────
 let tasks      = [];
 let users      = [];
-let conjuntos  = ['Portal del Valle','Torres del Parque','Los Alamos','Reserva del Rio'];
+let conjuntos  = [];
 let conjuntosEmails = {}; // {nombreConjunto: email}
 let categorias = ['Financiero','Infraestructura','Seguridad','Administrativo','Juridico','Mantenimiento','Convivencia'];
 let currentUser   = null;
@@ -505,24 +505,12 @@ async function loadUsers(){
     users.push(u);
   });
   if(!users.length){
-    await seedUsers();
-    await loadUsers();
+    // No auto-seed - users must be created manually from Configuration
+    console.warn('No users found in Firebase. Please add users from Configuration.');
   }
 }
 
-async function seedUsers(){
-  const defaults = [
-    {nombre:'Director Operativo',pass:'admin123',rol:'director',conjuntos:[]},
-    {nombre:'Laura Villada',pass:'admin123',rol:'admin',conjuntos:['Portal del Valle']},
-    {nombre:'Adm. Torres del Parque',pass:'admin123',rol:'admin',conjuntos:['Torres del Parque']},
-    {nombre:'Adm. Los Alamos',pass:'admin123',rol:'admin',conjuntos:['Los Alamos']},
-    {nombre:'Adm. Reserva del Rio',pass:'admin123',rol:'admin',conjuntos:['Reserva del Rio']},
-  ];
-  for(const u of defaults){
-    const id = u.nombre.toLowerCase().replace(/[^a-z0-9]/g,'_');
-    await setDoc(doc(db, COL.users, id), u);
-  }
-}
+// seedUsers removed - no auto-seeding of demo data in production
 
 async function saveUserDoc(u){
   const id = u.id || u.nombre.toLowerCase().replace(/[^a-z0-9]/g,'_')+'_'+Date.now();
