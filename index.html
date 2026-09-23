@@ -107,6 +107,39 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .ep-En-proceso{background:var(--info-bg);color:var(--info);}
 .ep-Completada{background:var(--success-bg);color:var(--success);}
 .ep-Vencida{background:var(--danger-bg);color:var(--danger);}
+
+/* ── PERÍODOS ───────────────────────────────────────────────────────────── */
+.periodos-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.periodos-header h2{font-size:15px;font-weight:600;margin:0;}
+.periodos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding:16px;}
+.periodo-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;transition:box-shadow .15s;}
+.periodo-card:hover{box-shadow:var(--shadow);}
+.periodo-card-title{font-size:14px;font-weight:600;margin-bottom:4px;}
+.periodo-card-sub{font-size:12px;color:var(--text2);margin-bottom:12px;}
+.periodo-pct{font-size:28px;font-weight:700;color:#185FA5;margin-bottom:4px;}
+.periodo-pct-label{font-size:11px;color:var(--text2);margin-bottom:10px;}
+.periodo-bar-wrap{background:var(--surface2);border-radius:999px;height:7px;overflow:hidden;margin-bottom:10px;}
+.periodo-bar{height:100%;border-radius:999px;background:linear-gradient(90deg,#185FA5,#3b82f6);transition:width .4s;}
+.periodo-stats{display:flex;gap:10px;flex-wrap:wrap;}
+.pstat{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:3px;}
+.pstat strong{color:var(--text);}
+.periodo-detail-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.periodo-detail-header h2{font-size:15px;font-weight:600;margin:0;flex:1;}
+.ind-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;padding:14px 16px;}
+.ind-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;}
+.ind-title{font-size:12px;color:var(--text2);margin-bottom:6px;}
+.ind-pct{font-size:22px;font-weight:700;color:#185FA5;}
+.ind-sub{font-size:11px;color:var(--text2);margin-top:2px;}
+.ind-bar-wrap{background:var(--surface2);border-radius:999px;height:5px;overflow:hidden;margin-top:6px;}
+.ind-bar{height:100%;border-radius:999px;background:#185FA5;}
+.periodo-tasks-section{padding:0 16px 16px;}
+.periodo-tasks-section h3{font-size:13px;font-weight:600;margin:14px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;}
+.cierre-modal-body{padding:16px;}
+.cierre-modal-body p{font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.5;}
+.cierre-preview{background:var(--surface2);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;font-size:13px;}
+.cierre-preview .cp-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border);}
+.cierre-preview .cp-row:last-child{border:none;}
+.cierre-warning{background:#fff3e0;color:#b06a00;border:1px solid #fcd34d;border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;margin-bottom:14px;}
 .prio-Alta{background:#fdecea;color:#c0392b;font-size:10px;padding:2px 7px;border-radius:999px;font-weight:600;border:1px solid #fca5a5;}
 .prio-Media{background:#fff3e0;color:#b06a00;font-size:10px;padding:2px 7px;border-radius:999px;font-weight:600;border:1px solid #fcd34d;}
 .prio-Baja{background:#e8f7ee;color:#1a8a5a;font-size:10px;padding:2px 7px;border-radius:999px;font-weight:600;border:1px solid #6ee7b7;}
@@ -312,6 +345,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
     <div class="dash-grid" id="dashGrid"></div>
   </div>
 
+
+  <!-- PERÍODOS -->
+  <div class="view" id="view-periodos">
+    <div id="periodosMain"></div>
+  </div>
+
   <!-- CONFIG -->
   <div class="view" id="view-config">
     <div class="config-wrap">
@@ -345,6 +384,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
         <div class="cfg-title"><i class="ti ti-mail"></i> Alertas por correo</div>
         <div class="info-box"><i class="ti ti-info-circle" style="flex-shrink:0;font-size:16px;margin-top:1px;"></i><span>Las alertas se envian automaticamente al abrir la app (tareas que vencen hoy o en 3 dias). Usa este boton si agregaste correos nuevos y quieres forzar el reenvio sin esperar.</span></div>
         <button class="btn-add" style="width:100%;justify-content:center;" onclick="forzarReenvioAlertas()"><i class="ti ti-send"></i> Reenviar alertas ahora</button>
+      </div>
+
+      <!-- CIERRE DE PERÍODO -->
+      <div class="cfg-card" style="border-color:#185FA540;background:var(--info-bg,#f0f7ff);">
+        <div class="cfg-title"><i class="ti ti-calendar-stats"></i> Cierre de período mensual</div>
+        <div class="info-box" style="margin-bottom:10px;"><i class="ti ti-info-circle" style="flex-shrink:0;font-size:16px;margin-top:1px;"></i><span>Al cerrar el período, las tareas <strong>Completadas</strong> se archivan en la pestaña Períodos con sus indicadores de cumplimiento. Las tareas pendientes y en proceso permanecen activas en la vista principal.</span></div>
+        <button class="btn-primary" style="width:100%;justify-content:center;" onclick="abrirCierreModal()"><i class="ti ti-archive"></i> Cerrar período y archivar completadas</button>
       </div>
     </div>
   </div>
@@ -382,6 +428,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 </div>
 
 <!-- MODAL USUARIO -->
+<!-- MODAL CIERRE DE PERÍODO -->
+<div class="overlay" id="overlayCierre" onclick="closeIfOutside(event,'overlayCierre')">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-title"><span>Cerrar período mensual</span><button class="modal-close" onclick="closeOverlay('overlayCierre')" aria-label="Cerrar">✕</button></div>
+    <div id="cierreModalBody"></div>
+  </div>
+</div>
+
 <div class="overlay" id="overlayUser" onclick="closeIfOutside(event,'overlayUser')">
   <div class="modal">
     <div class="modal-title"><span id="userModalTitle">Nuevo administrador</span><button class="modal-close" onclick="closeOverlay('overlayUser')" aria-label="Cerrar">✕</button></div>
@@ -426,11 +480,13 @@ const db = getFirestore(fbApp);
 const COL = {
   tasks:    'tasks',
   users:    'users',
-  config:   'config'
+  config:   'config',
+  periodos: 'periodos'
 };
 
 // ── STATE ───────────────────────────────────────────────────────────────────
 let tasks      = [];
+let periodos   = [];
 let users      = [];
 let conjuntos  = [];
 let conjuntosEmails = {}; // {nombreConjunto: email}
@@ -613,6 +669,7 @@ async function init(){
     await loadConfig();
     await loadUsers();
     subscribeToTasks();
+    await loadPeriodos();
     buildLoginSelect();
     document.getElementById('loadingScreen').style.display='none';
     document.getElementById('screen-login').style.display='flex';
@@ -672,7 +729,7 @@ function setupApp(){
   const tabs=document.getElementById('navTabs');
   tabs.innerHTML='';
   const defs=dir
-    ?[{id:'tareas',label:'Tareas',icon:'ti-list-check'},{id:'dashboard',label:'Dashboard',icon:'ti-layout-dashboard'},{id:'config',label:'Configuracion',icon:'ti-settings'}]
+    ?[{id:'tareas',label:'Tareas',icon:'ti-list-check'},{id:'dashboard',label:'Dashboard',icon:'ti-layout-dashboard'},{id:'periodos',label:'Períodos',icon:'ti-calendar-stats'},{id:'config',label:'Configuracion',icon:'ti-settings'}]
     :[{id:'tareas',label:'Mis tareas',icon:'ti-list-check'}];
   defs.forEach((t,i)=>{
     const el=document.createElement('div');
@@ -707,6 +764,7 @@ window.switchTab=function(tab,el){
   document.getElementById('view-'+tab).classList.add('active');
   if(tab==='dashboard')renderDash();
   if(tab==='config')renderConfig();
+  if(tab==='periodos')renderPeriodos();
 };
 
 // ── RENDER TASKS ─────────────────────────────────────────────────────────────
@@ -799,6 +857,311 @@ window.limpiarFiltrosFecha=function(){
 
 let reportMode = false;
 let selectedForReport = new Set();
+
+// ── PERÍODOS: FIREBASE ───────────────────────────────────────────────────────
+async function loadPeriodos(){
+  const snap = await getDocs(collection(db, COL.periodos));
+  periodos = [];
+  snap.forEach(d=>{const p=d.data(); p.id=d.id; periodos.push(p);});
+  periodos.sort((a,b)=>b.id.localeCompare(a.id)); // más reciente primero
+}
+
+// ── PERÍODOS: CIERRE ─────────────────────────────────────────────────────────
+window.abrirCierreModal=function(){
+  const hoy = new Date();
+  const mesKey = hoy.getFullYear()+'-'+(String(hoy.getMonth()+1).padStart(2,'0'));
+  const mesLabel = hoy.toLocaleDateString('es-CO',{month:'long',year:'numeric'});
+
+  // Tareas completadas este mes (por fechaRegistro o simplemente completadas)
+  const completadas = tasks.filter(t=>effEst(t)==='Completada');
+  const pendientes  = tasks.filter(t=>effEst(t)!=='Completada');
+
+  if(!completadas.length){
+    alert('No hay tareas completadas para archivar en este período.');
+    return;
+  }
+
+  // Agrupar por conjunto para preview
+  const porCj={};
+  completadas.forEach(t=>{
+    if(!porCj[t.conjunto]) porCj[t.conjunto]={total:0,comp:0};
+    porCj[t.conjunto].total++;
+    porCj[t.conjunto].comp++;
+  });
+  pendientes.forEach(t=>{
+    if(!porCj[t.conjunto]) porCj[t.conjunto]={total:0,comp:0};
+    porCj[t.conjunto].total++;
+  });
+
+  const rows = Object.entries(porCj).map(([cj,v])=>
+    '<div class="cp-row"><span>'+cj+'</span><span>'+v.comp+' completadas / '+v.total+' totales</span></div>'
+  ).join('');
+
+  document.getElementById('cierreModalBody').innerHTML=`
+    <div class="cierre-modal-body">
+      <p>Se archivarán <strong>${completadas.length} tareas completadas</strong> en el período <strong>${mesLabel}</strong>. Las tareas pendientes y en proceso quedan activas en la vista principal.</p>
+      <div class="cierre-preview">${rows}</div>
+      <div class="cierre-warning">⚠️ Las tareas archivadas se podrán consultar en la pestaña <strong>Períodos</strong> pero no aparecerán en la lista principal.</div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn-secondary" onclick="closeOverlay('overlayCierre')">Cancelar</button>
+        <button class="btn-primary" onclick="ejecutarCierre('${mesKey}','${mesLabel}')"><i class="ti ti-archive"></i> Confirmar cierre</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('overlayCierre').classList.add('open');
+};
+
+window.ejecutarCierre=async function(mesKey, mesLabel){
+  const completadas = tasks.filter(t=>effEst(t)==='Completada');
+  const pendientes  = tasks.filter(t=>effEst(t)!=='Completada');
+  const total = tasks.length;
+  const pct = total>0 ? Math.round(completadas.length/total*100) : 0;
+
+  // Calcular indicadores por conjunto
+  const cjStats={};
+  tasks.forEach(t=>{
+    const cj=t.conjunto||'Sin conjunto';
+    if(!cjStats[cj]) cjStats[cj]={total:0,comp:0};
+    cjStats[cj].total++;
+    if(effEst(t)==='Completada') cjStats[cj].comp++;
+  });
+  // Calcular por responsable
+  const respStats={};
+  tasks.forEach(t=>{
+    const r=t.responsable||'Sin asignar';
+    if(!respStats[r]) respStats[r]={total:0,comp:0};
+    respStats[r].total++;
+    if(effEst(t)==='Completada') respStats[r].comp++;
+  });
+
+  // Guardar período en Firebase (tareas snapshot + indicadores)
+  const periodoData = {
+    label: mesLabel,
+    fechaCierre: todayStr(),
+    totalTareas: total,
+    completadas: completadas.length,
+    pendientesArch: pendientes.filter(t=>effEst(t)==='Pendiente').length,
+    pct,
+    cjStats,
+    respStats,
+    tareas: tasks.map(t=>({
+      id:t.id, titulo:t.titulo, conjunto:t.conjunto, categoria:t.categoria,
+      estado:effEst(t), fecha:t.fecha, fechaRegistro:t.fechaRegistro||'',
+      responsable:t.responsable, prioridad:t.prioridad||'Media',
+      observaciones:t.observaciones||''
+    }))
+  };
+
+  await setDoc(doc(db, COL.periodos, mesKey), periodoData);
+
+  // Eliminar de Firebase solo las completadas
+  for(const t of completadas){
+    await deleteDoc(doc(db, COL.tasks, t.id));
+  }
+
+  closeOverlay('overlayCierre');
+  await loadPeriodos();
+  alert('✅ Período '+mesLabel+' archivado correctamente. Se eliminaron '+completadas.length+' tareas completadas de la vista principal.');
+  // Ir a pestaña períodos
+  const tabs=document.querySelectorAll('.nav-tab');
+  tabs.forEach(tb=>{ if(tb.textContent.includes('Período')){ tb.click(); } });
+};
+
+// ── PERÍODOS: RENDER LISTA ───────────────────────────────────────────────────
+window.renderPeriodos=function(){
+  const el=document.getElementById('periodosMain');
+  if(!periodos.length){
+    el.innerHTML='<div style="padding:40px;text-align:center;color:var(--text2);font-size:14px;"><i class="ti ti-calendar-off" style="font-size:32px;display:block;margin-bottom:10px;"></i>Aún no hay períodos cerrados.<br>Usa el botón <strong>Cerrar período</strong> en Configuración cuando quieras archivar las tareas completadas del mes.</div>';
+    return;
+  }
+  const cards = periodos.map(p=>{
+    const pct=p.pct||0;
+    const color=pct>=80?'#22c55e':pct>=50?'#185FA5':'#ef4444';
+    return `<div class="periodo-card" onclick="verPeriodo('${p.id}')">
+      <div class="periodo-card-title"><i class="ti ti-calendar-event"></i> ${p.label}</div>
+      <div class="periodo-card-sub">Cerrado el ${p.fechaCierre?fmtDate(p.fechaCierre):''} · ${p.totalTareas} tareas</div>
+      <div class="periodo-pct" style="color:${color}">${pct}%</div>
+      <div class="periodo-pct-label">de cumplimiento</div>
+      <div class="periodo-bar-wrap"><div class="periodo-bar" style="width:${pct}%;background:${color}"></div></div>
+      <div class="periodo-stats">
+        <span class="pstat">✅ <strong>${p.completadas}</strong> completadas</span>
+        <span class="pstat">⏳ <strong>${p.pendientesArch||0}</strong> pendientes al cierre</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML=`
+    <div class="periodos-header">
+      <h2><i class="ti ti-calendar-stats"></i> Períodos mensuales</h2>
+    </div>
+    <div class="periodos-grid">${cards}</div>
+  `;
+};
+
+// ── PERÍODOS: VER DETALLE ────────────────────────────────────────────────────
+window.verPeriodo=function(pid){
+  const p = periodos.find(x=>x.id===pid);
+  if(!p) return;
+  const el=document.getElementById('periodosMain');
+
+  // Indicadores por conjunto
+  const cjCards = Object.entries(p.cjStats||{}).map(([cj,v])=>{
+    const pct=v.total>0?Math.round(v.comp/v.total*100):0;
+    const color=pct>=80?'#22c55e':pct>=50?'#185FA5':'#ef4444';
+    return `<div class="ind-card">
+      <div class="ind-title"><i class="ti ti-building"></i> ${cj}</div>
+      <div class="ind-pct" style="color:${color}">${pct}%</div>
+      <div class="ind-sub">${v.comp} completadas de ${v.total} totales</div>
+      <div class="ind-bar-wrap"><div class="ind-bar" style="width:${pct}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+
+  // Indicadores por responsable
+  const respCards = Object.entries(p.respStats||{}).map(([r,v])=>{
+    const pct=v.total>0?Math.round(v.comp/v.total*100):0;
+    const color=pct>=80?'#22c55e':pct>=50?'#185FA5':'#ef4444';
+    return `<div class="ind-card">
+      <div class="ind-title"><i class="ti ti-user"></i> ${r}</div>
+      <div class="ind-pct" style="color:${color}">${pct}%</div>
+      <div class="ind-sub">${v.comp} completadas de ${v.total} totales</div>
+      <div class="ind-bar-wrap"><div class="ind-bar" style="width:${pct}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+
+  // Lista tareas del período
+  const renderEstBadge=est=>{
+    const map={Completada:'#22c55e',Pendiente:'#6b7280','En proceso':'#185FA5',Vencida:'#ef4444'};
+    return '<span style="font-size:10px;padding:2px 7px;border-radius:999px;background:'+(map[est]||'#ccc')+'20;color:'+(map[est]||'#ccc')+';font-weight:600;border:1px solid '+(map[est]||'#ccc')+'40">'+est+'</span>';
+  };
+  const rows=(p.tareas||[]).map(t=>`
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;margin-bottom:3px;">${t.titulo}</div>
+        <div style="font-size:11px;color:var(--text2);">${t.conjunto} · ${t.categoria} · <i class="ti ti-user" style="font-size:10px;"></i> ${t.responsable}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        ${renderEstBadge(t.estado)}
+        <span class="prio-${t.prioridad||'Media'}">${t.prioridad||'Media'}</span>
+      </div>
+    </div>`).join('');
+
+  el.innerHTML=`
+    <div class="periodo-detail-header">
+      <button class="btn-secondary" onclick="renderPeriodos()" style="padding:5px 10px;font-size:12px;"><i class="ti ti-arrow-left"></i> Volver</button>
+      <h2><i class="ti ti-calendar-event"></i> ${p.label}</h2>
+      <span style="font-size:12px;color:var(--text2);">${p.totalTareas} tareas · Cerrado el ${p.fechaCierre?fmtDate(p.fechaCierre):''}</span>
+      <button class="btn-primary" style="margin-left:auto;font-size:12px;padding:6px 12px;" onclick="generarInformePeriodo('${pid}')"><i class="ti ti-file-word"></i> Informe Word</button>
+    </div>
+
+    <!-- KPIs globales -->
+    <div style="display:flex;gap:14px;padding:14px 16px;flex-wrap:wrap;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;min-width:120px;text-align:center;">
+        <div style="font-size:28px;font-weight:700;color:${p.pct>=80?'#22c55e':p.pct>=50?'#185FA5':'#ef4444'}">${p.pct}%</div>
+        <div style="font-size:11px;color:var(--text2);">Cumplimiento global</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;min-width:120px;text-align:center;">
+        <div style="font-size:28px;font-weight:700;color:#22c55e">${p.completadas}</div>
+        <div style="font-size:11px;color:var(--text2);">Completadas</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;min-width:120px;text-align:center;">
+        <div style="font-size:28px;font-weight:700;color:#6b7280">${p.pendientesArch||0}</div>
+        <div style="font-size:11px;color:var(--text2);">Pendientes al cierre</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;min-width:120px;text-align:center;">
+        <div style="font-size:28px;font-weight:700;color:var(--text)">${p.totalTareas}</div>
+        <div style="font-size:11px;color:var(--text2);">Total tareas</div>
+      </div>
+    </div>
+
+    <div style="padding:0 16px;font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Por conjunto</div>
+    <div class="ind-grid">${cjCards}</div>
+
+    <div style="padding:0 16px;font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Por administrador</div>
+    <div class="ind-grid">${respCards}</div>
+
+    <div class="periodo-tasks-section">
+      <h3>Detalle de tareas</h3>
+      ${rows}
+    </div>
+  `;
+};
+
+// ── PERÍODOS: INFORME WORD ───────────────────────────────────────────────────
+window.generarInformePeriodo=function(pid){
+  const p=periodos.find(x=>x.id===pid);
+  if(!p) return;
+
+  const cjRows=Object.entries(p.cjStats||{}).map(([cj,v])=>{
+    const pct=v.total>0?Math.round(v.comp/v.total*100):0;
+    return `<tr><td>${cj}</td><td style="text-align:center">${v.total}</td><td style="text-align:center">${v.comp}</td><td style="text-align:center;font-weight:700;color:${pct>=80?'green':pct>=50?'#185FA5':'red'}">${pct}%</td></tr>`;
+  }).join('');
+
+  const respRows=Object.entries(p.respStats||{}).map(([r,v])=>{
+    const pct=v.total>0?Math.round(v.comp/v.total*100):0;
+    return `<tr><td>${r}</td><td style="text-align:center">${v.total}</td><td style="text-align:center">${v.comp}</td><td style="text-align:center;font-weight:700;color:${pct>=80?'green':pct>=50?'#185FA5':'red'}">${pct}%</td></tr>`;
+  }).join('');
+
+  const tareaRows=(p.tareas||[]).map((t,i)=>
+    `<tr><td>${i+1}</td><td>${t.titulo}</td><td>${t.conjunto}</td><td>${t.responsable}</td><td>${t.prioridad||'Media'}</td><td>${t.fecha?fmtDate(t.fecha):''}</td><td style="font-weight:600;color:${t.estado==='Completada'?'green':t.estado==='Vencida'?'red':'#185FA5'}">${t.estado}</td></tr>`
+  ).join('');
+
+  const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8">
+  <style>
+    body{font-family:Calibri,Arial,sans-serif;font-size:11pt;margin:2cm;}
+    h1{font-size:16pt;color:#185FA5;margin:0 0 2px;}
+    h2{font-size:12pt;color:#185FA5;margin:18px 0 6px;border-bottom:1.5px solid #185FA5;padding-bottom:3px;}
+    .header-block{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;border-bottom:2px solid #185FA5;padding-bottom:10px;}
+    .kpi-row{display:flex;gap:24px;margin:10px 0 18px;}
+    .kpi{text-align:center;border:1px solid #ddd;border-radius:6px;padding:10px 18px;}
+    .kpi-val{font-size:22pt;font-weight:700;color:#185FA5;}
+    .kpi-label{font-size:9pt;color:#666;}
+    table{border-collapse:collapse;width:100%;margin-bottom:16px;font-size:10pt;}
+    th{background:#185FA5;color:#fff;padding:6px 10px;text-align:left;}
+    td{padding:5px 10px;border-bottom:1px solid #eee;}
+    tr:nth-child(even) td{background:#f5f8ff;}
+    .footer{margin-top:24px;font-size:8pt;color:#999;border-top:1px solid #ddd;padding-top:6px;}
+  </style></head><body>
+  <div class="header-block">
+    <div>
+      <h1>Arango Osorio S.A.S.</h1>
+      <div style="font-size:10pt;color:#555;">Administración de Propiedad Horizontal</div>
+    </div>
+    <div style="text-align:right;font-size:10pt;color:#555;">
+      <strong>Informe de Gestión</strong><br>
+      Período: <strong>${p.label}</strong><br>
+      Fecha de cierre: ${p.fechaCierre?fmtDate(p.fechaCierre):''}
+    </div>
+  </div>
+
+  <h2>Indicadores Globales</h2>
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-val">${p.pct}%</div><div class="kpi-label">Cumplimiento</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#22a85a">${p.completadas}</div><div class="kpi-label">Completadas</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#888">${p.pendientesArch||0}</div><div class="kpi-label">Pendientes</div></div>
+    <div class="kpi"><div class="kpi-val">${p.totalTareas}</div><div class="kpi-label">Total</div></div>
+  </div>
+
+  <h2>Cumplimiento por Conjunto</h2>
+  <table><thead><tr><th>Conjunto</th><th>Total</th><th>Completadas</th><th>% Cumplimiento</th></tr></thead><tbody>${cjRows}</tbody></table>
+
+  <h2>Cumplimiento por Administrador</h2>
+  <table><thead><tr><th>Administrador</th><th>Total</th><th>Completadas</th><th>% Cumplimiento</th></tr></thead><tbody>${respRows}</tbody></table>
+
+  <h2>Detalle de Tareas</h2>
+  <table><thead><tr><th>#</th><th>Tarea</th><th>Conjunto</th><th>Responsable</th><th>Prioridad</th><th>Vencimiento</th><th>Estado</th></tr></thead><tbody>${tareaRows}</tbody></table>
+
+  <div class="footer">Generado por GestiónPH · Arango Osorio S.A.S. · ${new Date().toLocaleDateString('es-CO')}</div>
+  </body></html>`;
+
+  const blob=new Blob(['﻿'+html],{type:'application/msword'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='Informe_'+p.id+'.doc';
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 
 window.toggleReportMode=function(){
   reportMode = !reportMode;
