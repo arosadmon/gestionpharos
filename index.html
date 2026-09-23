@@ -284,7 +284,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
   <div class="view active" id="view-tareas">
     <div class="filters-bar">
       <div class="search-wrap"><i class="ti ti-search"></i><input type="text" id="filtBuscar" placeholder="Buscar..." oninput="renderTasks()"></div>
-      <select id="filtCj" onchange="renderTasks()"></select>
+
+      <!-- Multi-select Conjunto -->
+      <div class="multiselect-wrap" id="wrapCj" style="display:none;">
+        <button class="multiselect-btn" onclick="toggleMultiSelect('wrapCj')" id="btnCj">
+          <span id="lblCj">Todos los conjuntos</span><i class="ti ti-chevron-down" style="font-size:12px;margin-left:4px;"></i>
+        </button>
+        <div class="multiselect-dropdown" id="dropCj" style="max-height:220px;overflow-y:auto;"></div>
+      </div>
+
       <select id="filtCat" onchange="renderTasks()"><option value="">Todas las categorías</option></select>
 
       <!-- Multi-select Estado -->
@@ -742,15 +750,20 @@ function setupApp(){
     tabs.appendChild(el);
   });
 
-  const filtCj=document.getElementById('filtCj');
-  if(dir){
-    filtCj.innerHTML='<option value="">Todos los conjuntos</option>'+conjuntos.map(c=>'<option>'+c+'</option>').join('');
-    filtCj.style.display='';
-  }else{
-    const opts=currentUser.conjuntos;
-    filtCj.innerHTML=(opts.length>1?'<option value="">Todos mis conjuntos</option>':'')+opts.map(c=>'<option>'+c+'</option>').join('');
-    filtCj.style.display=opts.length>1?'':'none';
-    if(opts.length===1)filtCj.value=opts[0];
+  // Multi-select de conjuntos
+  const wrapCj = document.getElementById('wrapCj');
+  const dropCj = document.getElementById('dropCj');
+  const lbl = document.getElementById('lblCj');
+  const availCjs = dir ? conjuntos : currentUser.conjuntos;
+  if(availCjs.length > 1){
+    dropCj.innerHTML = availCjs.map(c=>
+      `<label class="ms-item"><input type="checkbox" value="${c}" onchange="updateMultiLabel('Cj');renderTasks()"> ${c}</label>`
+    ).join('');
+    wrapCj.style.display = '';
+    lbl.textContent = dir ? 'Todos los conjuntos' : 'Todos mis conjuntos';
+    document.getElementById('btnCj').dataset.defaultLabel = lbl.textContent;
+  } else {
+    wrapCj.style.display = 'none';
   }
   document.getElementById('filtCat').innerHTML='<option value="">Todas las categorias</option>'+categorias.map(c=>'<option>'+c+'</option>').join('');
 
@@ -781,7 +794,7 @@ function renderStats(){
 }
 
 function getFiltered(){
-  const cj=document.getElementById('filtCj').value;
+  const cjSelec = getCheckedValues('dropCj');
   const cat=document.getElementById('filtCat').value;
   const estSelec = getCheckedValues('dropEst');
   const prioSelec = getCheckedValues('dropPrio');
@@ -793,7 +806,7 @@ function getFiltered(){
 
   return visibleTasks().filter(t=>{
     const ev=effEst(t);
-    if(cj&&t.conjunto!==cj) return false;
+    if(cjSelec.length&&!cjSelec.includes(t.conjunto)) return false;
     if(cat&&t.categoria!==cat) return false;
     if(estSelec.length&&!estSelec.includes(ev)) return false;
     if(prioSelec.length&&!prioSelec.includes(t.prioridad||'Media')) return false;
@@ -833,9 +846,11 @@ window.updateMultiLabel=function(key){
   const vals = getCheckedValues('drop'+key);
   const lbl = document.getElementById('lbl'+key);
   const btn = document.getElementById('btn'+key);
+  // Para Cj el label por defecto está guardado en dataset
   const defaults = {Est:'Todos los estados', Prio:'Todas las prioridades'};
+  const defaultLabel = key==='Cj' ? (btn.dataset.defaultLabel||'Todos los conjuntos') : defaults[key];
   if(!vals.length){
-    lbl.textContent = defaults[key];
+    lbl.textContent = defaultLabel;
     btn.classList.remove('active');
   } else {
     lbl.textContent = vals.join(', ');
@@ -1012,43 +1027,69 @@ window.abrirCierreModal=function(){
   const mk=mesActualKey();
   const ml=mesLabel(mk);
   const tareasMes=tareasDelMes(mk);
+  const tareasAnteriores=visibleTasks().filter(t=>{
+    const fr=t.fechaRegistro||t.fecha||'';
+    return fr < mk+'-01'; // meses anteriores al actual
+  });
+  const hayAnteriores = tareasAnteriores.length > 0;
 
-  if(!tareasMes.length){
-    alert('No hay tareas registradas en '+ml+' para cerrar.');
+  if(!tareasMes.length && !hayAnteriores){
+    alert('No hay tareas para cerrar en este período.');
     return;
   }
 
-  const stats=calcStats(tareasMes);
-  const porCj=agruparPor(tareasMes,'conjunto');
-
-  const rows=Object.entries(porCj).map(([cj,v])=>
-    '<div class="cp-row"><span><i class="ti ti-building" style="font-size:11px;"></i> '+cj+'</span>'+
-    '<span style="color:'+pctColor(v.pct)+';font-weight:600;">'+v.comp+'/'+v.total+' ('+v.pct+'%)</span></div>'
-  ).join('');
+  // Función para actualizar el preview según el checkbox
+  function actualizarPreview(){
+    const incluyeAnt = document.getElementById('chkIncluirAnt') && document.getElementById('chkIncluirAnt').checked;
+    const pool = incluyeAnt
+      ? [...tareasMes, ...tareasAnteriores]
+      : tareasMes;
+    const stats=calcStats(pool);
+    const porCj=agruparPor(pool,'conjunto');
+    const rows=Object.entries(porCj).map(([cj,v])=>
+      '<div class="cp-row"><span><i class="ti ti-building" style="font-size:11px;"></i> '+cj+'</span>'+
+      '<span style="color:'+pctColor(v.pct)+';font-weight:600;">'+v.comp+'/'+v.total+' ('+v.pct+'%)</span></div>'
+    ).join('');
+    document.getElementById('cierrePreviewRows').innerHTML=rows;
+    document.getElementById('cierreResumen').innerHTML=
+      '✅ <strong>'+stats.comp+' completadas</strong> se archivarán y saldrán de la lista principal.<br>'+
+      '⏳ <strong>'+stats.pend+' pendientes/en proceso</strong> quedan activas pero quedan en el informe como no cumplidas.';
+    document.getElementById('cierreTotalLabel').textContent=pool.length+' tareas';
+  }
+  window._getCierrePool=function(){
+    const incluyeAnt=document.getElementById('chkIncluirAnt')&&document.getElementById('chkIncluirAnt').checked;
+    return incluyeAnt ? [...tareasMes,...tareasAnteriores] : tareasMes;
+  };
 
   document.getElementById('cierreModalBody').innerHTML=`
     <div class="cierre-modal-body">
-      <p>Se archivará el período <strong>${ml}</strong> con <strong>${tareasMes.length} tareas</strong> registradas ese mes.</p>
+      <p>Se archivará el período <strong>${ml}</strong> con <strong><span id="cierreTotalLabel">${tareasMes.length} tareas</span></strong> registradas.</p>
+      ${hayAnteriores ? `
+      <label style="display:flex;align-items:flex-start;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px;cursor:pointer;font-size:13px;">
+        <input type="checkbox" id="chkIncluirAnt" style="margin-top:2px;accent-color:#185FA5;width:15px;height:15px;flex-shrink:0;" onchange="(function(){var f=window._actualizarPreviewCierre;if(f)f();})()">
+        <span><strong>Incluir completadas de meses anteriores</strong> — <span style="color:var(--text2);">${tareasAnteriores.length} tareas de meses previos sin período asignado. Márcalo solo la primera vez para limpiar el historial.</span></span>
+      </label>` : ''}
       <div class="cierre-preview">
         <div class="cp-row" style="font-weight:600;color:var(--text);margin-bottom:4px;"><span>Conjunto</span><span>Cumplimiento</span></div>
-        ${rows}
+        <div id="cierrePreviewRows"></div>
       </div>
-      <div class="cierre-warning">
-        ✅ <strong>${stats.comp} completadas</strong> se archivarán y saldrán de la lista principal.<br>
-        ⏳ <strong>${stats.pend} pendientes/en proceso</strong> quedan activas pero quedan registradas en el informe como no cumplidas.<br>
-        ⚠️ Esta acción no se puede deshacer.
-      </div>
+      <div class="cierre-warning" id="cierreResumen"></div>
+      <div style="color:var(--text2);font-size:11px;margin-bottom:12px;">⚠️ Esta acción no se puede deshacer.</div>
       <div style="display:flex;gap:8px;justify-content:flex-end;">
         <button class="btn-secondary" onclick="closeOverlay('overlayCierre')">Cancelar</button>
         <button class="btn-primary" onclick="ejecutarCierre('${mk}','${ml}')"><i class="ti ti-archive"></i> Confirmar cierre</button>
       </div>
     </div>`;
+
+  window._actualizarPreviewCierre = actualizarPreview;
+  actualizarPreview();
   document.getElementById('overlayCierre').classList.add('open');
 };
 
 // ── PERÍODOS: EJECUTAR CIERRE ────────────────────────────────────────────────
 window.ejecutarCierre=async function(mk, ml){
-  const tareasMes=tareasDelMes(mk);
+  // Usa el pool seleccionado en el modal (con o sin meses anteriores)
+  const tareasMes = window._getCierrePool ? window._getCierrePool() : tareasDelMes(mk);
   const completadas=tareasMes.filter(t=>effEst(t)==='Completada');
   const noCumplidas=tareasMes.filter(t=>effEst(t)!=='Completada');
   const stats=calcStats(tareasMes);
