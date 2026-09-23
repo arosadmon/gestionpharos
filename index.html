@@ -127,6 +127,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .periodo-detail-header h2{font-size:15px;font-weight:600;margin:0;flex:1;}
 .ind-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;padding:14px 16px;}
 .ind-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;}
+.kpi-tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;text-align:center;min-width:100px;}
+.kpi-val{font-size:26px;font-weight:700;line-height:1.1;}
+.kpi-lbl{font-size:11px;color:var(--text2);margin-top:3px;}
 .ind-title{font-size:12px;color:var(--text2);margin-bottom:6px;}
 .ind-pct{font-size:22px;font-weight:700;color:#185FA5;}
 .ind-sub{font-size:11px;color:var(--text2);margin-top:2px;}
@@ -730,7 +733,7 @@ function setupApp(){
   tabs.innerHTML='';
   const defs=dir
     ?[{id:'tareas',label:'Tareas',icon:'ti-list-check'},{id:'dashboard',label:'Dashboard',icon:'ti-layout-dashboard'},{id:'periodos',label:'Períodos',icon:'ti-calendar-stats'},{id:'config',label:'Configuracion',icon:'ti-settings'}]
-    :[{id:'tareas',label:'Mis tareas',icon:'ti-list-check'}];
+    :[{id:'tareas',label:'Mis tareas',icon:'ti-list-check'},{id:'periodos',label:'Indicadores',icon:'ti-chart-bar'}];
   defs.forEach((t,i)=>{
     const el=document.createElement('div');
     el.className='nav-tab'+(i===0?' active':'');
@@ -859,92 +862,207 @@ let reportMode = false;
 let selectedForReport = new Set();
 
 // ── PERÍODOS: FIREBASE ───────────────────────────────────────────────────────
+// ── PERÍODOS: HELPERS ───────────────────────────────────────────────────────
+function mesActualKey(){
+  const h=new Date();
+  return h.getFullYear()+'-'+(String(h.getMonth()+1).padStart(2,'0'));
+}
+function mesLabel(key){
+  // key = "2026-09"
+  const [y,m]=key.split('-');
+  const d=new Date(+y,+m-1,1);
+  return d.toLocaleDateString('es-CO',{month:'long',year:'numeric'});
+}
+function pctColor(p){return p>=80?'#22c55e':p>=50?'#185FA5':'#ef4444';}
+
+// Tareas visibles para el usuario actual filtradas por mes (fechaRegistro)
+function tareasDelMes(mesKey, pool){
+  pool = pool || visibleTasks();
+  return pool.filter(t=>{
+    const fr=t.fechaRegistro||t.fecha||'';
+    return fr.startsWith(mesKey);
+  });
+}
+
+// Calcula stats {total,comp,pend,venc,pct} para un array de tareas
+function calcStats(arr){
+  const total=arr.length;
+  const comp=arr.filter(t=>effEst(t)==='Completada').length;
+  const venc=arr.filter(t=>effEst(t)==='Vencida').length;
+  const pend=total-comp;
+  const pct=total>0?Math.round(comp/total*100):0;
+  return {total,comp,pend,venc,pct};
+}
+
+// Agrupa tareas por campo y devuelve {nombre:{total,comp,pend,venc,pct}}
+function agruparPor(arr, campo){
+  const map={};
+  arr.forEach(t=>{
+    const k=t[campo]||'Sin asignar';
+    if(!map[k]) map[k]={total:0,comp:0,pend:0,venc:0};
+    map[k].total++;
+    const est=effEst(t);
+    if(est==='Completada') map[k].comp++;
+    else if(est==='Vencida') map[k].venc++;
+    else map[k].pend++;
+  });
+  Object.values(map).forEach(v=>{ v.pct=v.total>0?Math.round(v.comp/v.total*100):0; });
+  return map;
+}
+
+// ── PERÍODOS: FIREBASE ───────────────────────────────────────────────────────
 async function loadPeriodos(){
   const snap = await getDocs(collection(db, COL.periodos));
   periodos = [];
   snap.forEach(d=>{const p=d.data(); p.id=d.id; periodos.push(p);});
-  periodos.sort((a,b)=>b.id.localeCompare(a.id)); // más reciente primero
+  periodos.sort((a,b)=>b.id.localeCompare(a.id));
 }
 
-// ── PERÍODOS: CIERRE ─────────────────────────────────────────────────────────
+// ── PERÍODOS: RENDER PRINCIPAL (lista + mes en vivo) ─────────────────────────
+window.renderPeriodos=function(){
+  const el=document.getElementById('periodosMain');
+  const dir=(currentUser&&currentUser.rol==='director');
+  const mk=mesActualKey();
+  const tareasMes=tareasDelMes(mk);
+  const stats=calcStats(tareasMes);
+  const porCj=agruparPor(tareasMes,'conjunto');
+  const porResp=agruparPor(tareasMes,'responsable');
+
+  // ── Panel mes en vivo ────────────────────────────────────────────────────
+  const cjCardsVivo=Object.entries(porCj).map(([cj,v])=>`
+    <div class="ind-card">
+      <div class="ind-title"><i class="ti ti-building"></i> ${cj}</div>
+      <div class="ind-pct" style="color:${pctColor(v.pct)}">${v.pct}%</div>
+      <div class="ind-sub">${v.comp} completadas · ${v.pend} pendientes · ${v.total} total</div>
+      <div class="ind-bar-wrap"><div class="ind-bar" style="width:${v.pct}%;background:${pctColor(v.pct)}"></div></div>
+    </div>`).join('');
+
+  const respCardsVivo=Object.entries(porResp).map(([r,v])=>`
+    <div class="ind-card">
+      <div class="ind-title"><i class="ti ti-user"></i> ${r}</div>
+      <div class="ind-pct" style="color:${pctColor(v.pct)}">${v.pct}%</div>
+      <div class="ind-sub">${v.comp} completadas · ${v.pend} pendientes · ${v.total} total</div>
+      <div class="ind-bar-wrap"><div class="ind-bar" style="width:${v.pct}%;background:${pctColor(v.pct)}"></div></div>
+    </div>`).join('');
+
+  const vivoSection=`
+    <div style="background:var(--info-bg,#f0f7ff);border-bottom:1px solid var(--border);">
+      <div class="periodos-header" style="background:transparent;">
+        <div>
+          <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Mes en curso</div>
+          <h2 style="margin:2px 0 0;">${mesLabel(mk)}</h2>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button class="btn-secondary" style="font-size:12px;" onclick="exportarIndicadorVivo()"><i class="ti ti-file-word"></i> Exportar indicador</button>
+          ${dir?'<button class="btn-primary" style="font-size:12px;" onclick="abrirCierreModal()"><i class="ti ti-archive"></i> Cerrar período</button>':''}
+        </div>
+      </div>
+      <!-- KPIs globales -->
+      <div style="display:flex;gap:10px;padding:0 16px 14px;flex-wrap:wrap;">
+        <div class="kpi-tile" style="color:${pctColor(stats.pct)}">
+          <div class="kpi-val">${stats.pct}%</div><div class="kpi-lbl">Cumplimiento</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-val" style="color:#22c55e">${stats.comp}</div><div class="kpi-lbl">Completadas</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-val" style="color:#6b7280">${stats.pend}</div><div class="kpi-lbl">Pendientes / En proceso</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-val" style="color:#ef4444">${stats.venc}</div><div class="kpi-lbl">Vencidas</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-val">${stats.total}</div><div class="kpi-lbl">Total del mes</div>
+        </div>
+      </div>
+      ${tareasMes.length?`
+        <div style="padding:0 16px 6px;font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;">Por conjunto</div>
+        <div class="ind-grid" style="padding-top:0;">${cjCardsVivo}</div>
+        ${dir?`<div style="padding:0 16px 6px;font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;">Por administrador</div>
+        <div class="ind-grid" style="padding-top:0;">${respCardsVivo}</div>`:''}
+      `:'<div style="padding:0 16px 16px;font-size:13px;color:var(--text2);">Aún no hay tareas registradas en '+mesLabel(mk)+'.</div>'}
+    </div>`;
+
+  // ── Lista períodos cerrados ───────────────────────────────────────────────
+  const histSection = periodos.length
+    ? `<div class="periodos-header" style="padding-bottom:6px;">
+        <h2 style="font-size:13px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.04em;"><i class="ti ti-history"></i> Períodos cerrados</h2>
+       </div>
+       <div class="periodos-grid">${periodos.map(p=>{
+          const pct=p.pct||0;
+          return `<div class="periodo-card" onclick="verPeriodo('${p.id}')">
+            <div class="periodo-card-title"><i class="ti ti-calendar-event"></i> ${p.label}</div>
+            <div class="periodo-card-sub">Cerrado el ${p.fechaCierre?fmtDate(p.fechaCierre):''} · ${p.totalTareas} tareas</div>
+            <div class="periodo-pct" style="color:${pctColor(pct)}">${pct}%</div>
+            <div class="periodo-pct-label">cumplimiento</div>
+            <div class="periodo-bar-wrap"><div class="periodo-bar" style="width:${pct}%;background:${pctColor(pct)}"></div></div>
+            <div class="periodo-stats">
+              <span class="pstat">✅ <strong>${p.completadas}</strong> completadas</span>
+              <span class="pstat">⏳ <strong>${p.pendientesArch||0}</strong> no cumplidas</span>
+            </div>
+          </div>`;
+        }).join('')}</div>`
+    : `<div style="padding:24px 16px;font-size:13px;color:var(--text2);"><i class="ti ti-calendar-off"></i> Aún no hay períodos cerrados.</div>`;
+
+  el.innerHTML = vivoSection + histSection;
+};
+
+// ── PERÍODOS: CIERRE MODAL ───────────────────────────────────────────────────
 window.abrirCierreModal=function(){
-  const hoy = new Date();
-  const mesKey = hoy.getFullYear()+'-'+(String(hoy.getMonth()+1).padStart(2,'0'));
-  const mesLabel = hoy.toLocaleDateString('es-CO',{month:'long',year:'numeric'});
+  const mk=mesActualKey();
+  const ml=mesLabel(mk);
+  const tareasMes=tareasDelMes(mk);
 
-  // Tareas completadas este mes (por fechaRegistro o simplemente completadas)
-  const completadas = tasks.filter(t=>effEst(t)==='Completada');
-  const pendientes  = tasks.filter(t=>effEst(t)!=='Completada');
-
-  if(!completadas.length){
-    alert('No hay tareas completadas para archivar en este período.');
+  if(!tareasMes.length){
+    alert('No hay tareas registradas en '+ml+' para cerrar.');
     return;
   }
 
-  // Agrupar por conjunto para preview
-  const porCj={};
-  completadas.forEach(t=>{
-    if(!porCj[t.conjunto]) porCj[t.conjunto]={total:0,comp:0};
-    porCj[t.conjunto].total++;
-    porCj[t.conjunto].comp++;
-  });
-  pendientes.forEach(t=>{
-    if(!porCj[t.conjunto]) porCj[t.conjunto]={total:0,comp:0};
-    porCj[t.conjunto].total++;
-  });
+  const stats=calcStats(tareasMes);
+  const porCj=agruparPor(tareasMes,'conjunto');
 
-  const rows = Object.entries(porCj).map(([cj,v])=>
-    '<div class="cp-row"><span>'+cj+'</span><span>'+v.comp+' completadas / '+v.total+' totales</span></div>'
+  const rows=Object.entries(porCj).map(([cj,v])=>
+    '<div class="cp-row"><span><i class="ti ti-building" style="font-size:11px;"></i> '+cj+'</span>'+
+    '<span style="color:'+pctColor(v.pct)+';font-weight:600;">'+v.comp+'/'+v.total+' ('+v.pct+'%)</span></div>'
   ).join('');
 
   document.getElementById('cierreModalBody').innerHTML=`
     <div class="cierre-modal-body">
-      <p>Se archivarán <strong>${completadas.length} tareas completadas</strong> en el período <strong>${mesLabel}</strong>. Las tareas pendientes y en proceso quedan activas en la vista principal.</p>
-      <div class="cierre-preview">${rows}</div>
-      <div class="cierre-warning">⚠️ Las tareas archivadas se podrán consultar en la pestaña <strong>Períodos</strong> pero no aparecerán en la lista principal.</div>
+      <p>Se archivará el período <strong>${ml}</strong> con <strong>${tareasMes.length} tareas</strong> registradas ese mes.</p>
+      <div class="cierre-preview">
+        <div class="cp-row" style="font-weight:600;color:var(--text);margin-bottom:4px;"><span>Conjunto</span><span>Cumplimiento</span></div>
+        ${rows}
+      </div>
+      <div class="cierre-warning">
+        ✅ <strong>${stats.comp} completadas</strong> se archivarán y saldrán de la lista principal.<br>
+        ⏳ <strong>${stats.pend} pendientes/en proceso</strong> quedan activas pero quedan registradas en el informe como no cumplidas.<br>
+        ⚠️ Esta acción no se puede deshacer.
+      </div>
       <div style="display:flex;gap:8px;justify-content:flex-end;">
         <button class="btn-secondary" onclick="closeOverlay('overlayCierre')">Cancelar</button>
-        <button class="btn-primary" onclick="ejecutarCierre('${mesKey}','${mesLabel}')"><i class="ti ti-archive"></i> Confirmar cierre</button>
+        <button class="btn-primary" onclick="ejecutarCierre('${mk}','${ml}')"><i class="ti ti-archive"></i> Confirmar cierre</button>
       </div>
-    </div>
-  `;
+    </div>`;
   document.getElementById('overlayCierre').classList.add('open');
 };
 
-window.ejecutarCierre=async function(mesKey, mesLabel){
-  const completadas = tasks.filter(t=>effEst(t)==='Completada');
-  const pendientes  = tasks.filter(t=>effEst(t)!=='Completada');
-  const total = tasks.length;
-  const pct = total>0 ? Math.round(completadas.length/total*100) : 0;
+// ── PERÍODOS: EJECUTAR CIERRE ────────────────────────────────────────────────
+window.ejecutarCierre=async function(mk, ml){
+  const tareasMes=tareasDelMes(mk);
+  const completadas=tareasMes.filter(t=>effEst(t)==='Completada');
+  const noCumplidas=tareasMes.filter(t=>effEst(t)!=='Completada');
+  const stats=calcStats(tareasMes);
+  const porCj=agruparPor(tareasMes,'conjunto');
+  const porResp=agruparPor(tareasMes,'responsable');
 
-  // Calcular indicadores por conjunto
-  const cjStats={};
-  tasks.forEach(t=>{
-    const cj=t.conjunto||'Sin conjunto';
-    if(!cjStats[cj]) cjStats[cj]={total:0,comp:0};
-    cjStats[cj].total++;
-    if(effEst(t)==='Completada') cjStats[cj].comp++;
-  });
-  // Calcular por responsable
-  const respStats={};
-  tasks.forEach(t=>{
-    const r=t.responsable||'Sin asignar';
-    if(!respStats[r]) respStats[r]={total:0,comp:0};
-    respStats[r].total++;
-    if(effEst(t)==='Completada') respStats[r].comp++;
-  });
-
-  // Guardar período en Firebase (tareas snapshot + indicadores)
-  const periodoData = {
-    label: mesLabel,
-    fechaCierre: todayStr(),
-    totalTareas: total,
-    completadas: completadas.length,
-    pendientesArch: pendientes.filter(t=>effEst(t)==='Pendiente').length,
-    pct,
-    cjStats,
-    respStats,
-    tareas: tasks.map(t=>({
+  const periodoData={
+    label:ml, fechaCierre:todayStr(),
+    totalTareas:tareasMes.length,
+    completadas:completadas.length,
+    pendientesArch:noCumplidas.length,
+    pct:stats.pct,
+    cjStats:porCj, respStats:porResp,
+    tareas:tareasMes.map(t=>({
       id:t.id, titulo:t.titulo, conjunto:t.conjunto, categoria:t.categoria,
       estado:effEst(t), fecha:t.fecha, fechaRegistro:t.fechaRegistro||'',
       responsable:t.responsable, prioridad:t.prioridad||'Media',
@@ -952,87 +1070,53 @@ window.ejecutarCierre=async function(mesKey, mesLabel){
     }))
   };
 
-  await setDoc(doc(db, COL.periodos, mesKey), periodoData);
+  await setDoc(doc(db, COL.periodos, mk), periodoData);
 
-  // Eliminar de Firebase solo las completadas
+  // Solo eliminar las completadas de la lista activa
   for(const t of completadas){
     await deleteDoc(doc(db, COL.tasks, t.id));
   }
 
   closeOverlay('overlayCierre');
   await loadPeriodos();
-  alert('✅ Período '+mesLabel+' archivado correctamente. Se eliminaron '+completadas.length+' tareas completadas de la vista principal.');
-  // Ir a pestaña períodos
-  const tabs=document.querySelectorAll('.nav-tab');
-  tabs.forEach(tb=>{ if(tb.textContent.includes('Período')){ tb.click(); } });
+  alert('✅ Período '+ml+' cerrado.\n'+completadas.length+' tareas completadas archivadas.\n'+noCumplidas.length+' tareas quedan activas en la lista principal.');
+  renderPeriodos();
 };
 
-// ── PERÍODOS: RENDER LISTA ───────────────────────────────────────────────────
-window.renderPeriodos=function(){
-  const el=document.getElementById('periodosMain');
-  if(!periodos.length){
-    el.innerHTML='<div style="padding:40px;text-align:center;color:var(--text2);font-size:14px;"><i class="ti ti-calendar-off" style="font-size:32px;display:block;margin-bottom:10px;"></i>Aún no hay períodos cerrados.<br>Usa el botón <strong>Cerrar período</strong> en Configuración cuando quieras archivar las tareas completadas del mes.</div>';
-    return;
-  }
-  const cards = periodos.map(p=>{
-    const pct=p.pct||0;
-    const color=pct>=80?'#22c55e':pct>=50?'#185FA5':'#ef4444';
-    return `<div class="periodo-card" onclick="verPeriodo('${p.id}')">
-      <div class="periodo-card-title"><i class="ti ti-calendar-event"></i> ${p.label}</div>
-      <div class="periodo-card-sub">Cerrado el ${p.fechaCierre?fmtDate(p.fechaCierre):''} · ${p.totalTareas} tareas</div>
-      <div class="periodo-pct" style="color:${color}">${pct}%</div>
-      <div class="periodo-pct-label">de cumplimiento</div>
-      <div class="periodo-bar-wrap"><div class="periodo-bar" style="width:${pct}%;background:${color}"></div></div>
-      <div class="periodo-stats">
-        <span class="pstat">✅ <strong>${p.completadas}</strong> completadas</span>
-        <span class="pstat">⏳ <strong>${p.pendientesArch||0}</strong> pendientes al cierre</span>
-      </div>
-    </div>`;
-  }).join('');
-
-  el.innerHTML=`
-    <div class="periodos-header">
-      <h2><i class="ti ti-calendar-stats"></i> Períodos mensuales</h2>
-    </div>
-    <div class="periodos-grid">${cards}</div>
-  `;
+// ── PERÍODOS: EXPORTAR INDICADOR EN VIVO ─────────────────────────────────────
+window.exportarIndicadorVivo=function(){
+  const mk=mesActualKey(); const ml=mesLabel(mk);
+  const tareasMes=tareasDelMes(mk);
+  _generarWordIndicador(ml, tareasMes, false, new Date().toLocaleDateString('es-CO'));
 };
 
-// ── PERÍODOS: VER DETALLE ────────────────────────────────────────────────────
+// ── PERÍODOS: VER PERÍODO CERRADO ────────────────────────────────────────────
 window.verPeriodo=function(pid){
-  const p = periodos.find(x=>x.id===pid);
+  const p=periodos.find(x=>x.id===pid);
   if(!p) return;
   const el=document.getElementById('periodosMain');
 
-  // Indicadores por conjunto
-  const cjCards = Object.entries(p.cjStats||{}).map(([cj,v])=>{
-    const pct=v.total>0?Math.round(v.comp/v.total*100):0;
-    const color=pct>=80?'#22c55e':pct>=50?'#185FA5':'#ef4444';
-    return `<div class="ind-card">
-      <div class="ind-title"><i class="ti ti-building"></i> ${cj}</div>
-      <div class="ind-pct" style="color:${color}">${pct}%</div>
-      <div class="ind-sub">${v.comp} completadas de ${v.total} totales</div>
-      <div class="ind-bar-wrap"><div class="ind-bar" style="width:${pct}%;background:${color}"></div></div>
-    </div>`;
-  }).join('');
-
-  // Indicadores por responsable
-  const respCards = Object.entries(p.respStats||{}).map(([r,v])=>{
-    const pct=v.total>0?Math.round(v.comp/v.total*100):0;
-    const color=pct>=80?'#22c55e':pct>=50?'#185FA5':'#ef4444';
-    return `<div class="ind-card">
-      <div class="ind-title"><i class="ti ti-user"></i> ${r}</div>
-      <div class="ind-pct" style="color:${color}">${pct}%</div>
-      <div class="ind-sub">${v.comp} completadas de ${v.total} totales</div>
-      <div class="ind-bar-wrap"><div class="ind-bar" style="width:${pct}%;background:${color}"></div></div>
-    </div>`;
-  }).join('');
-
-  // Lista tareas del período
   const renderEstBadge=est=>{
     const map={Completada:'#22c55e',Pendiente:'#6b7280','En proceso':'#185FA5',Vencida:'#ef4444'};
     return '<span style="font-size:10px;padding:2px 7px;border-radius:999px;background:'+(map[est]||'#ccc')+'20;color:'+(map[est]||'#ccc')+';font-weight:600;border:1px solid '+(map[est]||'#ccc')+'40">'+est+'</span>';
   };
+
+  const cjCards=Object.entries(p.cjStats||{}).map(([cj,v])=>`
+    <div class="ind-card">
+      <div class="ind-title"><i class="ti ti-building"></i> ${cj}</div>
+      <div class="ind-pct" style="color:${pctColor(v.pct)}">${v.pct}%</div>
+      <div class="ind-sub">${v.comp} completadas · ${v.pend||v.total-v.comp} no cumplidas · ${v.total} total</div>
+      <div class="ind-bar-wrap"><div class="ind-bar" style="width:${v.pct}%;background:${pctColor(v.pct)}"></div></div>
+    </div>`).join('');
+
+  const respCards=Object.entries(p.respStats||{}).map(([r,v])=>`
+    <div class="ind-card">
+      <div class="ind-title"><i class="ti ti-user"></i> ${r}</div>
+      <div class="ind-pct" style="color:${pctColor(v.pct)}">${v.pct}%</div>
+      <div class="ind-sub">${v.comp} completadas · ${v.pend||v.total-v.comp} no cumplidas · ${v.total} total</div>
+      <div class="ind-bar-wrap"><div class="ind-bar" style="width:${v.pct}%;background:${pctColor(v.pct)}"></div></div>
+    </div>`).join('');
+
   const rows=(p.tareas||[]).map(t=>`
     <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
       <div style="flex:1;">
@@ -1050,116 +1134,116 @@ window.verPeriodo=function(pid){
       <button class="btn-secondary" onclick="renderPeriodos()" style="padding:5px 10px;font-size:12px;"><i class="ti ti-arrow-left"></i> Volver</button>
       <h2><i class="ti ti-calendar-event"></i> ${p.label}</h2>
       <span style="font-size:12px;color:var(--text2);">${p.totalTareas} tareas · Cerrado el ${p.fechaCierre?fmtDate(p.fechaCierre):''}</span>
-      <button class="btn-primary" style="margin-left:auto;font-size:12px;padding:6px 12px;" onclick="generarInformePeriodo('${pid}')"><i class="ti ti-file-word"></i> Informe Word</button>
+      <button class="btn-primary" style="margin-left:auto;font-size:12px;padding:6px 12px;" onclick="generarInformePeriodo('${pid}')"><i class="ti ti-file-word"></i> Exportar informe Word</button>
     </div>
-
-    <!-- KPIs globales -->
-    <div style="display:flex;gap:14px;padding:14px 16px;flex-wrap:wrap;">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;min-width:120px;text-align:center;">
-        <div style="font-size:28px;font-weight:700;color:${p.pct>=80?'#22c55e':p.pct>=50?'#185FA5':'#ef4444'}">${p.pct}%</div>
-        <div style="font-size:11px;color:var(--text2);">Cumplimiento global</div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;min-width:120px;text-align:center;">
-        <div style="font-size:28px;font-weight:700;color:#22c55e">${p.completadas}</div>
-        <div style="font-size:11px;color:var(--text2);">Completadas</div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;min-width:120px;text-align:center;">
-        <div style="font-size:28px;font-weight:700;color:#6b7280">${p.pendientesArch||0}</div>
-        <div style="font-size:11px;color:var(--text2);">Pendientes al cierre</div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;min-width:120px;text-align:center;">
-        <div style="font-size:28px;font-weight:700;color:var(--text)">${p.totalTareas}</div>
-        <div style="font-size:11px;color:var(--text2);">Total tareas</div>
-      </div>
+    <div style="display:flex;gap:10px;padding:14px 16px;flex-wrap:wrap;">
+      <div class="kpi-tile" style="color:${pctColor(p.pct||0)}"><div class="kpi-val">${p.pct||0}%</div><div class="kpi-lbl">Cumplimiento</div></div>
+      <div class="kpi-tile"><div class="kpi-val" style="color:#22c55e">${p.completadas}</div><div class="kpi-lbl">Completadas</div></div>
+      <div class="kpi-tile"><div class="kpi-val" style="color:#6b7280">${p.pendientesArch||0}</div><div class="kpi-lbl">No cumplidas</div></div>
+      <div class="kpi-tile"><div class="kpi-val">${p.totalTareas}</div><div class="kpi-lbl">Total</div></div>
     </div>
-
-    <div style="padding:0 16px;font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Por conjunto</div>
-    <div class="ind-grid">${cjCards}</div>
-
-    <div style="padding:0 16px;font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Por administrador</div>
-    <div class="ind-grid">${respCards}</div>
-
-    <div class="periodo-tasks-section">
-      <h3>Detalle de tareas</h3>
-      ${rows}
-    </div>
-  `;
+    <div style="padding:0 16px 6px;font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;">Por conjunto</div>
+    <div class="ind-grid" style="padding-top:0;">${cjCards}</div>
+    <div style="padding:0 16px 6px;font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;">Por administrador</div>
+    <div class="ind-grid" style="padding-top:0;">${respCards}</div>
+    <div class="periodo-tasks-section"><h3>Detalle de tareas</h3>${rows}</div>`;
 };
 
-// ── PERÍODOS: INFORME WORD ───────────────────────────────────────────────────
-window.generarInformePeriodo=function(pid){
-  const p=periodos.find(x=>x.id===pid);
-  if(!p) return;
+// ── WORD GENERATOR (vivo + cierre) ───────────────────────────────────────────
+function _generarWordIndicador(label, tareas, esCierre, fechaDoc){
+  const stats=calcStats(tareas);
+  const porCj=agruparPor(tareas,'conjunto');
+  const porResp=agruparPor(tareas,'responsable');
 
-  const cjRows=Object.entries(p.cjStats||{}).map(([cj,v])=>{
-    const pct=v.total>0?Math.round(v.comp/v.total*100):0;
-    return `<tr><td>${cj}</td><td style="text-align:center">${v.total}</td><td style="text-align:center">${v.comp}</td><td style="text-align:center;font-weight:700;color:${pct>=80?'green':pct>=50?'#185FA5':'red'}">${pct}%</td></tr>`;
+  const cjRows=Object.entries(porCj).map(([cj,v])=>{
+    const c=pctColor(v.pct).replace('#','');
+    return `<tr><td>${cj}</td><td style="text-align:center">${v.total}</td><td style="text-align:center;color:green">${v.comp}</td><td style="text-align:center;color:#888">${v.pend||v.total-v.comp}</td><td style="text-align:center;font-weight:700;color:${pctColor(v.pct)}">${v.pct}%</td></tr>`;
   }).join('');
 
-  const respRows=Object.entries(p.respStats||{}).map(([r,v])=>{
-    const pct=v.total>0?Math.round(v.comp/v.total*100):0;
-    return `<tr><td>${r}</td><td style="text-align:center">${v.total}</td><td style="text-align:center">${v.comp}</td><td style="text-align:center;font-weight:700;color:${pct>=80?'green':pct>=50?'#185FA5':'red'}">${pct}%</td></tr>`;
+  const respRows=Object.entries(porResp).map(([r,v])=>{
+    return `<tr><td>${r}</td><td style="text-align:center">${v.total}</td><td style="text-align:center;color:green">${v.comp}</td><td style="text-align:center;color:#888">${v.pend||v.total-v.comp}</td><td style="text-align:center;font-weight:700;color:${pctColor(v.pct)}">${v.pct}%</td></tr>`;
   }).join('');
 
-  const tareaRows=(p.tareas||[]).map((t,i)=>
-    `<tr><td>${i+1}</td><td>${t.titulo}</td><td>${t.conjunto}</td><td>${t.responsable}</td><td>${t.prioridad||'Media'}</td><td>${t.fecha?fmtDate(t.fecha):''}</td><td style="font-weight:600;color:${t.estado==='Completada'?'green':t.estado==='Vencida'?'red':'#185FA5'}">${t.estado}</td></tr>`
-  ).join('');
+  const tareaRows=tareas.map((t,i)=>{
+    const est=effEst?effEst(t):(t.estado||'');
+    const col=est==='Completada'?'green':est==='Vencida'?'red':'#185FA5';
+    return `<tr><td>${i+1}</td><td>${t.titulo}</td><td>${t.conjunto}</td><td>${t.responsable}</td><td>${t.prioridad||'Media'}</td><td>${t.fecha?fmtDate(t.fecha):''}</td><td style="font-weight:600;color:${col}">${est}</td></tr>`;
+  }).join('');
 
-  const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8">
-  <style>
-    body{font-family:Calibri,Arial,sans-serif;font-size:11pt;margin:2cm;}
-    h1{font-size:16pt;color:#185FA5;margin:0 0 2px;}
-    h2{font-size:12pt;color:#185FA5;margin:18px 0 6px;border-bottom:1.5px solid #185FA5;padding-bottom:3px;}
-    .header-block{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;border-bottom:2px solid #185FA5;padding-bottom:10px;}
-    .kpi-row{display:flex;gap:24px;margin:10px 0 18px;}
-    .kpi{text-align:center;border:1px solid #ddd;border-radius:6px;padding:10px 18px;}
-    .kpi-val{font-size:22pt;font-weight:700;color:#185FA5;}
-    .kpi-label{font-size:9pt;color:#666;}
-    table{border-collapse:collapse;width:100%;margin-bottom:16px;font-size:10pt;}
-    th{background:#185FA5;color:#fff;padding:6px 10px;text-align:left;}
-    td{padding:5px 10px;border-bottom:1px solid #eee;}
-    tr:nth-child(even) td{background:#f5f8ff;}
-    .footer{margin-top:24px;font-size:8pt;color:#999;border-top:1px solid #ddd;padding-top:6px;}
-  </style></head><body>
-  <div class="header-block">
-    <div>
-      <h1>Arango Osorio S.A.S.</h1>
-      <div style="font-size:10pt;color:#555;">Administración de Propiedad Horizontal</div>
-    </div>
-    <div style="text-align:right;font-size:10pt;color:#555;">
-      <strong>Informe de Gestión</strong><br>
-      Período: <strong>${p.label}</strong><br>
-      Fecha de cierre: ${p.fechaCierre?fmtDate(p.fechaCierre):''}
-    </div>
+  const tipo=esCierre?'Informe de Cierre':'Indicador de Seguimiento (En curso)';
+  const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
+<head><meta charset="utf-8"><style>
+  body{font-family:Calibri,Arial,sans-serif;font-size:11pt;margin:2cm;}
+  h1{font-size:16pt;color:#185FA5;margin:0 0 2px;}
+  h2{font-size:12pt;color:#185FA5;margin:20px 0 6px;border-bottom:1.5px solid #185FA5;padding-bottom:3px;}
+  .header-block{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;border-bottom:2px solid #185FA5;padding-bottom:10px;}
+  .kpi-row{display:flex;gap:20px;margin:10px 0 18px;flex-wrap:wrap;}
+  .kpi{text-align:center;border:1px solid #ddd;border-radius:6px;padding:10px 18px;min-width:100px;}
+  .kpi-val{font-size:20pt;font-weight:700;color:#185FA5;}
+  .kpi-label{font-size:9pt;color:#666;}
+  table{border-collapse:collapse;width:100%;margin-bottom:18px;font-size:10pt;}
+  th{background:#185FA5;color:#fff;padding:6px 10px;text-align:left;}
+  td{padding:5px 10px;border-bottom:1px solid #eee;}
+  tr:nth-child(even) td{background:#f5f8ff;}
+  .badge-vivo{display:inline-block;background:#fff3e0;color:#b06a00;border:1px solid #fcd34d;border-radius:4px;font-size:9pt;padding:2px 8px;margin-left:8px;}
+  .footer{margin-top:24px;font-size:8pt;color:#aaa;border-top:1px solid #ddd;padding-top:6px;}
+</style></head><body>
+<div class="header-block">
+  <div>
+    <h1>Arango Osorio S.A.S.</h1>
+    <div style="font-size:10pt;color:#555;">Administración de Propiedad Horizontal</div>
   </div>
-
-  <h2>Indicadores Globales</h2>
-  <div class="kpi-row">
-    <div class="kpi"><div class="kpi-val">${p.pct}%</div><div class="kpi-label">Cumplimiento</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:#22a85a">${p.completadas}</div><div class="kpi-label">Completadas</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:#888">${p.pendientesArch||0}</div><div class="kpi-label">Pendientes</div></div>
-    <div class="kpi"><div class="kpi-val">${p.totalTareas}</div><div class="kpi-label">Total</div></div>
+  <div style="text-align:right;font-size:10pt;color:#555;">
+    <strong>${tipo}</strong>${!esCierre?'<span class="badge-vivo">En curso</span>':''}<br>
+    Período: <strong>${label}</strong><br>
+    Generado: ${fechaDoc}
   </div>
+</div>
 
-  <h2>Cumplimiento por Conjunto</h2>
-  <table><thead><tr><th>Conjunto</th><th>Total</th><th>Completadas</th><th>% Cumplimiento</th></tr></thead><tbody>${cjRows}</tbody></table>
+<h2>Indicadores Globales</h2>
+<div class="kpi-row">
+  <div class="kpi"><div class="kpi-val" style="color:${pctColor(stats.pct)}">${stats.pct}%</div><div class="kpi-label">Cumplimiento</div></div>
+  <div class="kpi"><div class="kpi-val" style="color:#22a85a">${stats.comp}</div><div class="kpi-label">Completadas</div></div>
+  <div class="kpi"><div class="kpi-val" style="color:#888">${stats.pend}</div><div class="kpi-label">Pendientes</div></div>
+  <div class="kpi"><div class="kpi-val" style="color:#ef4444">${stats.venc}</div><div class="kpi-label">Vencidas</div></div>
+  <div class="kpi"><div class="kpi-val">${stats.total}</div><div class="kpi-label">Total</div></div>
+</div>
 
-  <h2>Cumplimiento por Administrador</h2>
-  <table><thead><tr><th>Administrador</th><th>Total</th><th>Completadas</th><th>% Cumplimiento</th></tr></thead><tbody>${respRows}</tbody></table>
+<h2>Cumplimiento por Conjunto</h2>
+<table><thead><tr><th>Conjunto</th><th>Total</th><th>Completadas</th><th>No cumplidas</th><th>% Cumplimiento</th></tr></thead><tbody>${cjRows}</tbody></table>
 
-  <h2>Detalle de Tareas</h2>
-  <table><thead><tr><th>#</th><th>Tarea</th><th>Conjunto</th><th>Responsable</th><th>Prioridad</th><th>Vencimiento</th><th>Estado</th></tr></thead><tbody>${tareaRows}</tbody></table>
+<h2>Cumplimiento por Administrador</h2>
+<table><thead><tr><th>Administrador</th><th>Total</th><th>Completadas</th><th>No cumplidas</th><th>% Cumplimiento</th></tr></thead><tbody>${respRows}</tbody></table>
 
-  <div class="footer">Generado por GestiónPH · Arango Osorio S.A.S. · ${new Date().toLocaleDateString('es-CO')}</div>
-  </body></html>`;
+<h2>Detalle de Tareas</h2>
+<table><thead><tr><th>#</th><th>Tarea</th><th>Conjunto</th><th>Responsable</th><th>Prioridad</th><th>Vencimiento</th><th>Estado</th></tr></thead><tbody>${tareaRows}</tbody></table>
+
+<div class="footer">Generado por GestiónPH · Arango Osorio S.A.S. · ${fechaDoc}${!esCierre?' · DOCUMENTO EN CURSO — no corresponde al cierre final del período':''}</div>
+</body></html>`;
 
   const blob=new Blob(['﻿'+html],{type:'application/msword'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url;
-  a.download='Informe_'+p.id+'.doc';
+  a.download=(esCierre?'Informe_':'Indicador_')+label.replace(/\s/g,'_')+'.doc';
   a.click();
   URL.revokeObjectURL(url);
+}
+
+window.generarInformePeriodo=function(pid){
+  const p=periodos.find(x=>x.id===pid);
+  if(!p) return;
+  _generarWordIndicador(p.label, p.tareas||[], true, p.fechaCierre?fmtDate(p.fechaCierre):new Date().toLocaleDateString('es-CO'));
+};
+
+// (multi-select helpers already defined above)
+
+window.limpiarFiltrosFecha=function(){
+  document.getElementById('filtFechaRegDesde').value='';
+  document.getElementById('filtFechaRegHasta').value='';
+  document.getElementById('filtFechaFinDesde').value='';
+  document.getElementById('filtFechaFinHasta').value='';
+  renderTasks();
 };
 
 
