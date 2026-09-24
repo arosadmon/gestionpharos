@@ -422,7 +422,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
     </div>
     <div class="field-row">
       <div class="field"><label>Fecha límite</label><input type="date" id="fFecha"></div>
-      <div class="field"><label>Fecha de registro</label><input type="date" id="fFechaReg"></div>
+      <div class="field"><label>Fecha de registro <span id="fFechaRegLock" style="font-size:10px;color:var(--text3);display:none;">(no editable)</span></label><input type="date" id="fFechaReg"></div>
     </div>
     <div class="field"><label>Responsable</label><select id="fResp"></select></div>
     <div class="field"><label>Observaciones <span style="color:var(--text3);font-weight:400;">(notas de gestión / cumplimiento)</span></label><textarea id="fObs" rows="3" placeholder="Detalles de cómo se resolvió o el estado actual..." style="width:100%;font-size:13px;padding:9px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;resize:vertical;"></textarea></div>
@@ -1457,7 +1457,10 @@ window.renderTasks=function renderTasks(){
       '<span class="tag tag-cat">'+t.categoria+'</span>'+
       '<span class="tag tag-resp"><i class="ti ti-user" style="font-size:10px;"></i> '+t.responsable+'</span>'+
       '</div>'+
-      '<div class="fecha '+fechaCls(t)+'"><i class="ti ti-calendar" style="font-size:11px;"></i> '+fechaLabel(t)+'</div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px;">'+
+      '<span style="font-size:11px;color:var(--text3);"><i class="ti ti-calendar-plus" style="font-size:11px;"></i> '+(t.fechaRegistro?fmtDate(t.fechaRegistro):'—')+'</span>'+
+      '<span class="fecha '+fechaCls(t)+'"><i class="ti ti-calendar-due" style="font-size:11px;"></i> '+fechaLabel(t)+'</span>'+
+      '</div>'+
       '</div>'+
       (!reportMode?'<div><button class="epill '+epCls(effEst(t))+'" onclick="cycleEstado(event,\''+t.id+'\')">'+effEst(t)+'</button></div>':'')+
       '</div>';
@@ -1494,7 +1497,12 @@ window.openTaskModal=function(id){
     document.getElementById('fEst').value=t.estado==='Vencida'?'Pendiente':t.estado;
     document.getElementById('fPrioridad').value=t.prioridad||'Media';
     document.getElementById('fFecha').value=t.fecha;
-    document.getElementById('fFechaReg').value=t.fechaRegistro||todayStr();
+    const fRegEl=document.getElementById('fFechaReg');
+    fRegEl.value=t.fechaRegistro||todayStr();
+    fRegEl.readOnly=true;
+    fRegEl.style.background='var(--surface2)';
+    fRegEl.style.color='var(--text2)';
+    document.getElementById('fFechaRegLock').style.display='inline';
     document.getElementById('fObs').value=t.observaciones||'';
     currentFotos = (t.fotos||[]).slice();
     updateRespList(t.responsable);
@@ -1503,7 +1511,12 @@ window.openTaskModal=function(id){
     document.getElementById('taskModalTitle').textContent='Nueva tarea';
     document.getElementById('fTitulo').value='';
     document.getElementById('fFecha').value=todayStr();
-    document.getElementById('fFechaReg').value=todayStr();
+    const fRegElN=document.getElementById('fFechaReg');
+    fRegElN.value=todayStr();
+    fRegElN.readOnly=false;
+    fRegElN.style.background='';
+    fRegElN.style.color='';
+    document.getElementById('fFechaRegLock').style.display='none';
     document.getElementById('fPrioridad').value='Media';
     document.getElementById('fEst').value='Pendiente';
     document.getElementById('fObs').value='';
@@ -1570,7 +1583,9 @@ window.saveTask=async function(){
     categoria:document.getElementById('fCat').value,
     estado:document.getElementById('fEst').value,
     fecha:document.getElementById('fFecha').value,
-    fechaRegistro:document.getElementById('fFechaReg').value||todayStr(),
+    fechaRegistro: editingTaskId
+      ? (tasks.find(x=>x.id===editingTaskId)||{}).fechaRegistro || document.getElementById('fFechaReg').value || todayStr()
+      : document.getElementById('fFechaReg').value || todayStr(),
     prioridad:document.getElementById('fPrioridad').value||'Media',
     observaciones:document.getElementById('fObs').value.trim(),
     fotos: currentFotos,
