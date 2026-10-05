@@ -612,7 +612,7 @@ async function saveTaskDoc(t){
     estado:t.estado, fecha:t.fecha, responsable:t.responsable||'',
     observaciones:t.observaciones||'', fotos:t.fotos||[],
     prioridad:t.prioridad||'Media',
-    fechaRegistro:t.fechaRegistro||todayStr()
+    fechaRegistro:t.fechaRegistro||todayStr()  // nunca se sobreescribe en edición (saveTask lo preserva del array tasks)
   };
   await setDoc(doc(db, COL.tasks, id), data);
   return id;
@@ -1166,25 +1166,57 @@ window.verPeriodo=function(pid){
       <div class="ind-bar-wrap"><div class="ind-bar" style="width:${v.pct}%;background:${pctColor(v.pct)}"></div></div>
     </div>`).join('');
 
-  // Renderiza filas filtradas según estado seleccionado
-  function renderFilaTareas(filtroEst){
-    const lista=(p.tareas||[]).filter(t=> !filtroEst || t.estado===filtroEst);
+  // Renderiza filas filtradas por conjunto Y estado
+  function renderFilaTareas(filtroEst, filtroCj){
+    const cj = filtroCj !== undefined ? filtroCj : (window._periodoCj||'');
+    let lista=(p.tareas||[]);
+    if(cj) lista=lista.filter(t=>t.conjunto===cj);
+    if(filtroEst) lista=lista.filter(t=>t.estado===filtroEst);
     if(!lista.length) return '<div style="padding:12px 0;font-size:13px;color:var(--text2);">Sin tareas con este filtro.</div>';
     return lista.map(t=>`
       <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
         <div style="flex:1;">
           <div style="font-size:13px;font-weight:500;margin-bottom:3px;">${t.titulo}</div>
-          <div style="font-size:11px;color:var(--text2);">${t.conjunto} · ${t.categoria} · <i class="ti ti-user" style="font-size:10px;"></i> ${t.responsable}</div>
+          <div style="font-size:11px;color:var(--text2);">${t.conjunto} · ${t.categoria} · <i class="ti ti-user" style="font-size:10px;"></i> ${t.responsable||'—'}</div>
+          ${t.observaciones?`<div style="font-size:11px;color:var(--text3);margin-top:2px;font-style:italic;">${t.observaciones}</div>`:''}
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
           ${renderEstBadge(t.estado)}
           <span class="prio-${t.prioridad||'Media'}">${t.prioridad||'Media'}</span>
+          ${t.fecha?`<span style="font-size:10px;color:var(--text3);">${fmtDate(t.fecha)}</span>`:''}
         </div>
       </div>`).join('');
   }
 
-  // Estado activo del filtro de tareas (se gestiona con data-attr en el DOM)
+  // Conteo de tareas según filtro de conjunto activo
+  function cntEst(est){
+    const cj=window._periodoCj||'';
+    let base=p.tareas||[];
+    if(cj) base=base.filter(t=>t.conjunto===cj);
+    return est ? base.filter(t=>t.estado===est).length : base.length;
+  }
+
+  // Actualiza los contadores en los botones de estado
+  function actualizarBotones(){
+    const all=cntEst('');
+    const comp=cntEst('Completada');
+    const pend=cntEst('Pendiente');
+    const venc=cntEst('Vencida');
+    const btns=document.querySelectorAll('.pf-btn');
+    if(btns[0]) btns[0].textContent=`Todas (${all})`;
+    if(btns[1]) btns[1].textContent=`✅ Completadas (${comp})`;
+    if(btns[2]) btns[2].textContent=`⏳ Pendientes (${pend})`;
+    if(btns[3]) btns[3].textContent=`🔴 Vencidas (${venc})`;
+    // Restaurar active al botón correcto
+    btns.forEach(b=>b.classList.remove('active'));
+    const est=window._periodoFiltroEst||'';
+    const idx=est===''?0:est==='Completada'?1:est==='Pendiente'?2:3;
+    if(btns[idx]) btns[idx].classList.add('active');
+  }
+
+  // Estado activo del filtro de tareas
   window._periodoFiltroEst = '';
+  window._periodoCj = '';
 
   window._filtrarTareasPeriodo = function(est, btn){
     window._periodoFiltroEst = est;
@@ -1193,16 +1225,20 @@ window.verPeriodo=function(pid){
     document.getElementById('periodoTaskRows').innerHTML = renderFilaTareas(est);
   };
 
+  window._filtrarCjPeriodo = function(sel){
+    window._periodoCj = sel.value;
+    actualizarBotones();
+    document.getElementById('periodoTaskRows').innerHTML = renderFilaTareas(window._periodoFiltroEst);
+  };
+
+  const conjsPeriodo = Object.keys(p.cjStats||{});
+
   el.innerHTML=`
     <div class="periodo-detail-header">
       <button class="btn-secondary" onclick="renderPeriodos()" style="padding:5px 10px;font-size:12px;"><i class="ti ti-arrow-left"></i> Volver</button>
       <h2><i class="ti ti-calendar-event"></i> ${p.label}</h2>
       <span style="font-size:12px;color:var(--text2);">${p.totalTareas} tareas · Cerrado el ${p.fechaCierre?fmtDate(p.fechaCierre):''}</span>
       <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
-        <select id="selExportCjPeriodo" style="font-size:12px;padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);">
-          <option value="">Todos los conjuntos</option>
-          ${Object.keys(p.cjStats||{}).map(c=>`<option value="${c}">${c}</option>`).join('')}
-        </select>
         <button class="btn-primary" style="font-size:12px;padding:6px 12px;" onclick="generarInformePeriodo('${pid}')"><i class="ti ti-file-pdf"></i> Exportar PDF</button>
       </div>
     </div>
@@ -1219,11 +1255,18 @@ window.verPeriodo=function(pid){
     <div class="periodo-tasks-section">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
         <h3 style="margin:0;">Detalle de tareas</h3>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <button class="pf-btn active" onclick="_filtrarTareasPeriodo('',this)" style="font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-weight:500;">Todas (${(p.tareas||[]).length})</button>
-          <button class="pf-btn" onclick="_filtrarTareasPeriodo('Completada',this)" style="font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid #86efac;background:#e8f7ee;color:#1a8a5a;cursor:pointer;font-weight:500;">✅ Completadas (${(p.tareas||[]).filter(t=>t.estado==='Completada').length})</button>
-          <button class="pf-btn" onclick="_filtrarTareasPeriodo('Pendiente',this)" style="font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-weight:500;">⏳ Pendientes (${(p.tareas||[]).filter(t=>t.estado==='Pendiente').length})</button>
-          <button class="pf-btn" onclick="_filtrarTareasPeriodo('Vencida',this)" style="font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid #fca5a5;background:#fdecea;color:#c0392b;cursor:pointer;font-weight:500;">🔴 Vencidas (${(p.tareas||[]).filter(t=>t.estado==='Vencida').length})</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          ${conjsPeriodo.length>1?`
+          <select id="selExportCjPeriodo" onchange="_filtrarCjPeriodo(this)" style="font-size:12px;padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);">
+            <option value="">Todos los conjuntos</option>
+            ${conjsPeriodo.map(c=>`<option value="${c}">${c}</option>`).join('')}
+          </select>`:`<input type="hidden" id="selExportCjPeriodo" value="${conjsPeriodo[0]||''}">`}
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="pf-btn active" onclick="_filtrarTareasPeriodo('',this)" style="font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-weight:500;">Todas (${(p.tareas||[]).length})</button>
+            <button class="pf-btn" onclick="_filtrarTareasPeriodo('Completada',this)" style="font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid #86efac;background:#e8f7ee;color:#1a8a5a;cursor:pointer;font-weight:500;">✅ Completadas (${(p.tareas||[]).filter(t=>t.estado==='Completada').length})</button>
+            <button class="pf-btn" onclick="_filtrarTareasPeriodo('Pendiente',this)" style="font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-weight:500;">⏳ Pendientes (${(p.tareas||[]).filter(t=>t.estado==='Pendiente').length})</button>
+            <button class="pf-btn" onclick="_filtrarTareasPeriodo('Vencida',this)" style="font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid #fca5a5;background:#fdecea;color:#c0392b;cursor:pointer;font-weight:500;">🔴 Vencidas (${(p.tareas||[]).filter(t=>t.estado==='Vencida').length})</button>
+          </div>
         </div>
       </div>
       <div id="periodoTaskRows">${renderFilaTareas('')}</div>
@@ -1411,7 +1454,8 @@ function _generarWordIndicador(label, tareas, esCierre, fechaDoc){
 window.generarInformePeriodo=function(pid){
   const p=periodos.find(x=>x.id===pid);
   if(!p) return;
-  const selCj=(document.getElementById('selExportCjPeriodo')||{}).value||'';
+  // Usa el filtro activo en la vista (conjunto + estado)
+  const selCj = window._periodoCj || (document.getElementById('selExportCjPeriodo')||{}).value || '';
   const filtroEst = window._periodoFiltroEst || '';
   let tareas=p.tareas||[];
   const cjLabel = selCj ? selCj : null;
@@ -1614,7 +1658,7 @@ window.saveTask=async function(){
     estado:document.getElementById('fEst').value,
     fecha:document.getElementById('fFecha').value,
     fechaRegistro: editingTaskId
-      ? (tasks.find(x=>x.id===editingTaskId)||{}).fechaRegistro || document.getElementById('fFechaReg').value || todayStr()
+      ? (tasks.find(x=>x.id===editingTaskId)||{}).fechaRegistro || todayStr()
       : document.getElementById('fFechaReg').value || todayStr(),
     prioridad:document.getElementById('fPrioridad').value||'Media',
     observaciones:document.getElementById('fObs').value.trim(),
