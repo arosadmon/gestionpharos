@@ -137,6 +137,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .ind-bar{height:100%;border-radius:999px;background:#185FA5;}
 .periodo-tasks-section{padding:0 16px 16px;}
 .periodo-tasks-section h3{font-size:13px;font-weight:600;margin:14px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;}
+.pf-btn.active{border-color:#185FA5!important;background:var(--info-bg)!important;color:#185FA5!important;}
 .cierre-modal-body{padding:16px;}
 .cierre-modal-body p{font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.5;}
 .cierre-preview{background:var(--surface2);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;font-size:13px;}
@@ -1165,17 +1166,32 @@ window.verPeriodo=function(pid){
       <div class="ind-bar-wrap"><div class="ind-bar" style="width:${v.pct}%;background:${pctColor(v.pct)}"></div></div>
     </div>`).join('');
 
-  const rows=(p.tareas||[]).map(t=>`
-    <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
-      <div style="flex:1;">
-        <div style="font-size:13px;font-weight:500;margin-bottom:3px;">${t.titulo}</div>
-        <div style="font-size:11px;color:var(--text2);">${t.conjunto} · ${t.categoria} · <i class="ti ti-user" style="font-size:10px;"></i> ${t.responsable}</div>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
-        ${renderEstBadge(t.estado)}
-        <span class="prio-${t.prioridad||'Media'}">${t.prioridad||'Media'}</span>
-      </div>
-    </div>`).join('');
+  // Renderiza filas filtradas según estado seleccionado
+  function renderFilaTareas(filtroEst){
+    const lista=(p.tareas||[]).filter(t=> !filtroEst || t.estado===filtroEst);
+    if(!lista.length) return '<div style="padding:12px 0;font-size:13px;color:var(--text2);">Sin tareas con este filtro.</div>';
+    return lista.map(t=>`
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:500;margin-bottom:3px;">${t.titulo}</div>
+          <div style="font-size:11px;color:var(--text2);">${t.conjunto} · ${t.categoria} · <i class="ti ti-user" style="font-size:10px;"></i> ${t.responsable}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          ${renderEstBadge(t.estado)}
+          <span class="prio-${t.prioridad||'Media'}">${t.prioridad||'Media'}</span>
+        </div>
+      </div>`).join('');
+  }
+
+  // Estado activo del filtro de tareas (se gestiona con data-attr en el DOM)
+  window._periodoFiltroEst = '';
+
+  window._filtrarTareasPeriodo = function(est, btn){
+    window._periodoFiltroEst = est;
+    document.querySelectorAll('.pf-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('periodoTaskRows').innerHTML = renderFilaTareas(est);
+  };
 
   el.innerHTML=`
     <div class="periodo-detail-header">
@@ -1200,7 +1216,18 @@ window.verPeriodo=function(pid){
     <div class="ind-grid" style="padding-top:0;">${cjCards}</div>
     <div style="padding:0 16px 6px;font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;">Por administrador</div>
     <div class="ind-grid" style="padding-top:0;">${respCards}</div>
-    <div class="periodo-tasks-section"><h3>Detalle de tareas</h3>${rows}</div>`;
+    <div class="periodo-tasks-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+        <h3 style="margin:0;">Detalle de tareas</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="pf-btn active" onclick="_filtrarTareasPeriodo('',this)" style="font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-weight:500;">Todas (${(p.tareas||[]).length})</button>
+          <button class="pf-btn" onclick="_filtrarTareasPeriodo('Completada',this)" style="font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid #86efac;background:#e8f7ee;color:#1a8a5a;cursor:pointer;font-weight:500;">✅ Completadas (${(p.tareas||[]).filter(t=>t.estado==='Completada').length})</button>
+          <button class="pf-btn" onclick="_filtrarTareasPeriodo('Pendiente',this)" style="font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-weight:500;">⏳ Pendientes (${(p.tareas||[]).filter(t=>t.estado==='Pendiente').length})</button>
+          <button class="pf-btn" onclick="_filtrarTareasPeriodo('Vencida',this)" style="font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid #fca5a5;background:#fdecea;color:#c0392b;cursor:pointer;font-weight:500;">🔴 Vencidas (${(p.tareas||[]).filter(t=>t.estado==='Vencida').length})</button>
+        </div>
+      </div>
+      <div id="periodoTaskRows">${renderFilaTareas('')}</div>
+    </div>`;
 };
 
 // ── PDF GENERATOR (abre ventana de impresión) ────────────────────────────────
@@ -1385,10 +1412,13 @@ window.generarInformePeriodo=function(pid){
   const p=periodos.find(x=>x.id===pid);
   if(!p) return;
   const selCj=(document.getElementById('selExportCjPeriodo')||{}).value||'';
+  const filtroEst = window._periodoFiltroEst || '';
   let tareas=p.tareas||[];
   const cjLabel = selCj ? selCj : null;
   if(selCj) tareas=tareas.filter(t=>t.conjunto===selCj);
-  _generarPDF(p.label+(cjLabel?' — '+cjLabel:''), tareas, true, p.fechaCierre?fmtDate(p.fechaCierre):new Date().toLocaleDateString('es-CO'), cjLabel);
+  if(filtroEst) tareas=tareas.filter(t=>t.estado===filtroEst);
+  const estLabel = filtroEst ? (' — '+filtroEst+'s') : '';
+  _generarPDF(p.label+(cjLabel?' — '+cjLabel:'')+estLabel, tareas, true, p.fechaCierre?fmtDate(p.fechaCierre):new Date().toLocaleDateString('es-CO'), cjLabel);
 };
 
 // (multi-select helpers already defined above)
