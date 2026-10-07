@@ -138,6 +138,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .periodo-tasks-section{padding:0 16px 16px;}
 .periodo-tasks-section h3{font-size:13px;font-weight:600;margin:14px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;}
 .pf-btn.active{border-color:#185FA5!important;background:var(--info-bg)!important;color:#185FA5!important;}
+.ptarea-row{transition:background .1s;border-radius:4px;}
+.ptarea-row:hover{background:var(--surface2);}
+.ptarea-sel{background:var(--info-bg)!important;}
 .cierre-modal-body{padding:16px;}
 .cierre-modal-body p{font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.5;}
 .cierre-preview{background:var(--surface2);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;font-size:13px;}
@@ -612,7 +615,7 @@ async function saveTaskDoc(t){
     estado:t.estado, fecha:t.fecha, responsable:t.responsable||'',
     observaciones:t.observaciones||'', fotos:t.fotos||[],
     prioridad:t.prioridad||'Media',
-    fechaRegistro:t.fechaRegistro||todayStr()  // nunca se sobreescribe en edición (saveTask lo preserva del array tasks)
+    fechaRegistro:t.fechaRegistro||t.fecha||todayStr()  // preserva la original; usa fecha límite como fallback para tareas sin registro
   };
   await setDoc(doc(db, COL.tasks, id), data);
   return id;
@@ -1004,11 +1007,29 @@ window.renderPeriodos=function(){
     </div>`;
 
   // ── Lista períodos cerrados ───────────────────────────────────────────────
-  const histSection = periodos.length
+  // Para admins: recalcular stats del período filtrando solo sus conjuntos
+  function periodoParaAdmin(p){
+    if(dir) return p; // director ve todo
+    const misCjs = currentUser.conjuntos;
+    const tareasFiltradas = (p.tareas||[]).filter(t=>misCjs.includes(t.conjunto));
+    if(!tareasFiltradas.length) return null; // período sin tareas de este admin
+    const st = calcStats(tareasFiltradas);
+    return Object.assign({}, p, {
+      totalTareas: st.total,
+      completadas: st.comp,
+      pendientesArch: st.pend + (st.venc||0),
+      pct: st.pct,
+      tareas: tareasFiltradas
+    });
+  }
+
+  const periodosVisibles = periodos.map(periodoParaAdmin).filter(Boolean);
+
+  const histSection = periodosVisibles.length
     ? `<div class="periodos-header" style="padding-bottom:6px;">
         <h2 style="font-size:13px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.04em;"><i class="ti ti-history"></i> Períodos cerrados</h2>
        </div>
-       <div class="periodos-grid">${periodos.map(p=>{
+       <div class="periodos-grid">${periodosVisibles.map(p=>{
           const pct=p.pct||0;
           return `<div class="periodo-card" onclick="verPeriodo('${p.id}')">
             <div class="periodo-card-title"><i class="ti ti-calendar-event"></i> ${p.label}</div>
@@ -1141,8 +1162,43 @@ window.exportarIndicadorVivo=function(){
 
 // ── PERÍODOS: VER PERÍODO CERRADO ────────────────────────────────────────────
 window.verPeriodo=function(pid){
-  const p=periodos.find(x=>x.id===pid);
-  if(!p) return;
+  const pOrig=periodos.find(x=>x.id===pid);
+  if(!pOrig) return;
+  const dir=(currentUser&&currentUser.rol==='director');
+  // Para admins: trabajar solo con las tareas de sus conjuntos
+  const misCjs = dir ? null : currentUser.conjuntos;
+  const tareasFiltradas = misCjs
+    ? (pOrig.tareas||[]).filter(t=>misCjs.includes(t.conjunto))
+    : (pOrig.tareas||[]);
+  const stFilt = calcStats(tareasFiltradas);
+  // Reconstruir cjStats y respStats solo con los datos visibles
+  const cjStatsFilt = {};
+  const respStatsFilt = {};
+  tareasFiltradas.forEach(t=>{
+    const cj=t.conjunto||'Sin conjunto';
+    if(!cjStatsFilt[cj]) cjStatsFilt[cj]={total:0,comp:0,pend:0,venc:0};
+    cjStatsFilt[cj].total++;
+    if(t.estado==='Completada') cjStatsFilt[cj].comp++;
+    else cjStatsFilt[cj].pend++;
+    const r=t.responsable||'Sin asignar';
+    if(!respStatsFilt[r]) respStatsFilt[r]={total:0,comp:0,pend:0,venc:0};
+    respStatsFilt[r].total++;
+    if(t.estado==='Completada') respStatsFilt[r].comp++;
+    else respStatsFilt[r].pend++;
+  });
+  Object.values(cjStatsFilt).forEach(v=>{v.pct=v.total?Math.round(v.comp/v.total*100):0;});
+  Object.values(respStatsFilt).forEach(v=>{v.pct=v.total?Math.round(v.comp/v.total*100):0;});
+  // p es la vista filtrada para este usuario
+  const p = Object.assign({}, pOrig, {
+    tareas: tareasFiltradas,
+    totalTareas: stFilt.total,
+    completadas: stFilt.comp,
+    pendientesArch: stFilt.pend + (stFilt.venc||0),
+    pct: stFilt.pct,
+    cjStats: cjStatsFilt,
+    respStats: respStatsFilt
+  });
+
   const el=document.getElementById('periodosMain');
 
   const renderEstBadge=est=>{
@@ -1166,26 +1222,75 @@ window.verPeriodo=function(pid){
       <div class="ind-bar-wrap"><div class="ind-bar" style="width:${v.pct}%;background:${pctColor(v.pct)}"></div></div>
     </div>`).join('');
 
-  // Renderiza filas filtradas por conjunto Y estado
-  function renderFilaTareas(filtroEst, filtroCj){
-    const cj = filtroCj !== undefined ? filtroCj : (window._periodoCj||'');
-    let lista=(p.tareas||[]);
-    if(cj) lista=lista.filter(t=>t.conjunto===cj);
-    if(filtroEst) lista=lista.filter(t=>t.estado===filtroEst);
+  // Set de IDs seleccionados manualmente
+  window._periodoSeleccion = new Set();
+
+  // Devuelve la lista visible según filtros activos
+  function listaVisible(){
+    const cj = window._periodoCj||'';
+    const est = window._periodoFiltroEst||'';
+    let lista = p.tareas||[];
+    if(cj) lista = lista.filter(t=>t.conjunto===cj);
+    if(est) lista = lista.filter(t=>t.estado===est);
+    return lista;
+  }
+
+  // Renderiza filas con checkboxes
+  function renderFilaTareas(){
+    const lista = listaVisible();
     if(!lista.length) return '<div style="padding:12px 0;font-size:13px;color:var(--text2);">Sin tareas con este filtro.</div>';
-    return lista.map(t=>`
-      <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
-        <div style="flex:1;">
+    return lista.map(t=>{
+      const sel = window._periodoSeleccion.has(t.id||t.titulo);
+      const key = JSON.stringify(t.id||t.titulo).replace(/"/g,'&quot;');
+      return `<div class="ptarea-row${sel?' ptarea-sel':''}" onclick="_togglePTarea('${t.id||t.titulo.replace(/'/g,"\\'")}',this)" style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer;border-radius:4px;">
+        <input type="checkbox" ${sel?'checked':''} onclick="event.stopPropagation();_togglePTarea('${t.id||t.titulo.replace(/'/g,"\\'")}',this.closest('.ptarea-row'))" style="width:16px;height:16px;margin-top:2px;accent-color:#185FA5;flex-shrink:0;cursor:pointer;">
+        <div style="flex:1;min-width:0;">
           <div style="font-size:13px;font-weight:500;margin-bottom:3px;">${t.titulo}</div>
           <div style="font-size:11px;color:var(--text2);">${t.conjunto} · ${t.categoria} · <i class="ti ti-user" style="font-size:10px;"></i> ${t.responsable||'—'}</div>
           ${t.observaciones?`<div style="font-size:11px;color:var(--text3);margin-top:2px;font-style:italic;">${t.observaciones}</div>`:''}
         </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
           ${renderEstBadge(t.estado)}
           <span class="prio-${t.prioridad||'Media'}">${t.prioridad||'Media'}</span>
           ${t.fecha?`<span style="font-size:10px;color:var(--text3);">${fmtDate(t.fecha)}</span>`:''}
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
+  }
+
+  // Toggle selección individual
+  window._togglePTarea = function(id, rowEl){
+    if(window._periodoSeleccion.has(id)) window._periodoSeleccion.delete(id);
+    else window._periodoSeleccion.add(id);
+    // Actualizar visual de la fila
+    const chk = rowEl.querySelector('input[type=checkbox]');
+    if(chk) chk.checked = window._periodoSeleccion.has(id);
+    rowEl.classList.toggle('ptarea-sel', window._periodoSeleccion.has(id));
+    actualizarBotonesSeleccion();
+  };
+
+  // Seleccionar / deseleccionar todo lo visible
+  window._toggleTodosPTarea = function(){
+    const lista = listaVisible();
+    const ids = lista.map(t=>t.id||t.titulo);
+    const todosMarcados = ids.every(id=>window._periodoSeleccion.has(id));
+    if(todosMarcados) ids.forEach(id=>window._periodoSeleccion.delete(id));
+    else ids.forEach(id=>window._periodoSeleccion.add(id));
+    document.getElementById('periodoTaskRows').innerHTML = renderFilaTareas();
+    actualizarBotonesSeleccion();
+  };
+
+  // Actualiza el texto del botón exportar y "sel todos"
+  function actualizarBotonesSeleccion(){
+    const n = window._periodoSeleccion.size;
+    const btnExp = document.getElementById('btnExpPeriodo');
+    const btnSel = document.getElementById('btnSelTodosPeriodo');
+    if(btnExp) btnExp.textContent = n>0 ? `Exportar PDF (${n} seleccionadas)` : 'Exportar PDF';
+    if(btnSel){
+      const lista = listaVisible();
+      const todosMarcados = lista.length>0 && lista.every(t=>window._periodoSeleccion.has(t.id||t.titulo));
+      btnSel.textContent = todosMarcados ? '☐ Deseleccionar todo' : '☑ Seleccionar todo';
+    }
   }
 
   // Conteo de tareas según filtro de conjunto activo
@@ -1207,7 +1312,6 @@ window.verPeriodo=function(pid){
     if(btns[1]) btns[1].textContent=`✅ Completadas (${comp})`;
     if(btns[2]) btns[2].textContent=`⏳ Pendientes (${pend})`;
     if(btns[3]) btns[3].textContent=`🔴 Vencidas (${venc})`;
-    // Restaurar active al botón correcto
     btns.forEach(b=>b.classList.remove('active'));
     const est=window._periodoFiltroEst||'';
     const idx=est===''?0:est==='Completada'?1:est==='Pendiente'?2:3;
@@ -1222,13 +1326,15 @@ window.verPeriodo=function(pid){
     window._periodoFiltroEst = est;
     document.querySelectorAll('.pf-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    document.getElementById('periodoTaskRows').innerHTML = renderFilaTareas(est);
+    document.getElementById('periodoTaskRows').innerHTML = renderFilaTareas();
+    actualizarBotonesSeleccion();
   };
 
   window._filtrarCjPeriodo = function(sel){
     window._periodoCj = sel.value;
     actualizarBotones();
-    document.getElementById('periodoTaskRows').innerHTML = renderFilaTareas(window._periodoFiltroEst);
+    document.getElementById('periodoTaskRows').innerHTML = renderFilaTareas();
+    actualizarBotonesSeleccion();
   };
 
   const conjsPeriodo = Object.keys(p.cjStats||{});
@@ -1239,7 +1345,7 @@ window.verPeriodo=function(pid){
       <h2><i class="ti ti-calendar-event"></i> ${p.label}</h2>
       <span style="font-size:12px;color:var(--text2);">${p.totalTareas} tareas · Cerrado el ${p.fechaCierre?fmtDate(p.fechaCierre):''}</span>
       <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
-        <button class="btn-primary" style="font-size:12px;padding:6px 12px;" onclick="generarInformePeriodo('${pid}')"><i class="ti ti-file-pdf"></i> Exportar PDF</button>
+        <button id="btnExpPeriodo" class="btn-primary" style="font-size:12px;padding:6px 12px;" onclick="generarInformePeriodo('${pid}')"><i class="ti ti-file-pdf"></i> Exportar PDF</button>
       </div>
     </div>
     <div style="display:flex;gap:10px;padding:14px 16px;flex-wrap:wrap;">
@@ -1261,6 +1367,7 @@ window.verPeriodo=function(pid){
             <option value="">Todos los conjuntos</option>
             ${conjsPeriodo.map(c=>`<option value="${c}">${c}</option>`).join('')}
           </select>`:`<input type="hidden" id="selExportCjPeriodo" value="${conjsPeriodo[0]||''}">`}
+          <button id="btnSelTodosPeriodo" onclick="_toggleTodosPTarea()" style="font-size:12px;padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);cursor:pointer;">☑ Seleccionar todo</button>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             <button class="pf-btn active" onclick="_filtrarTareasPeriodo('',this)" style="font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-weight:500;">Todas (${(p.tareas||[]).length})</button>
             <button class="pf-btn" onclick="_filtrarTareasPeriodo('Completada',this)" style="font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid #86efac;background:#e8f7ee;color:#1a8a5a;cursor:pointer;font-weight:500;">✅ Completadas (${(p.tareas||[]).filter(t=>t.estado==='Completada').length})</button>
@@ -1269,7 +1376,7 @@ window.verPeriodo=function(pid){
           </div>
         </div>
       </div>
-      <div id="periodoTaskRows">${renderFilaTareas('')}</div>
+      <div id="periodoTaskRows">${renderFilaTareas()}</div>
     </div>`;
 };
 
@@ -1454,15 +1561,25 @@ function _generarWordIndicador(label, tareas, esCierre, fechaDoc){
 window.generarInformePeriodo=function(pid){
   const p=periodos.find(x=>x.id===pid);
   if(!p) return;
-  // Usa el filtro activo en la vista (conjunto + estado)
   const selCj = window._periodoCj || (document.getElementById('selExportCjPeriodo')||{}).value || '';
   const filtroEst = window._periodoFiltroEst || '';
-  let tareas=p.tareas||[];
-  const cjLabel = selCj ? selCj : null;
-  if(selCj) tareas=tareas.filter(t=>t.conjunto===selCj);
-  if(filtroEst) tareas=tareas.filter(t=>t.estado===filtroEst);
-  const estLabel = filtroEst ? (' — '+filtroEst+'s') : '';
-  _generarPDF(p.label+(cjLabel?' — '+cjLabel:'')+estLabel, tareas, true, p.fechaCierre?fmtDate(p.fechaCierre):new Date().toLocaleDateString('es-CO'), cjLabel);
+  const seleccionadas = window._periodoSeleccion || new Set();
+  let tareas = p.tareas||[];
+  let labelExtra = '';
+  if(seleccionadas.size > 0){
+    // Exportar sólo las marcadas manualmente
+    tareas = tareas.filter(t => seleccionadas.has(t.id||t.titulo));
+    labelExtra = ` (${seleccionadas.size} sel.)`;
+  } else {
+    // Fallback: filtros activos en la vista
+    const cjLabel = selCj ? selCj : null;
+    if(selCj) tareas = tareas.filter(t=>t.conjunto===selCj);
+    if(filtroEst) tareas = tareas.filter(t=>t.estado===filtroEst);
+    if(cjLabel) labelExtra += ' — '+cjLabel;
+    if(filtroEst) labelExtra += ' — '+filtroEst+'s';
+  }
+  const cjLabelPDF = selCj || null;
+  _generarPDF(p.label+labelExtra, tareas, true, p.fechaCierre?fmtDate(p.fechaCierre):new Date().toLocaleDateString('es-CO'), cjLabelPDF);
 };
 
 // (multi-select helpers already defined above)
@@ -1658,7 +1775,7 @@ window.saveTask=async function(){
     estado:document.getElementById('fEst').value,
     fecha:document.getElementById('fFecha').value,
     fechaRegistro: editingTaskId
-      ? (tasks.find(x=>x.id===editingTaskId)||{}).fechaRegistro || todayStr()
+      ? (()=>{ const orig=tasks.find(x=>x.id===editingTaskId)||{}; return orig.fechaRegistro||orig.fecha||todayStr(); })()
       : document.getElementById('fFechaReg').value || todayStr(),
     prioridad:document.getElementById('fPrioridad').value||'Media',
     observaciones:document.getElementById('fObs').value.trim(),
